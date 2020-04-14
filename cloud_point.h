@@ -2,6 +2,8 @@
 #define CLOUD_POINT_H
 
 #include <vector>
+#include <Eigen/Dense>
+#include <CGAL/Simple_cartesian.h>
 
 struct point_3d 
 {
@@ -49,5 +51,8 @@ struct point_cloud
 		this->pts = points;
 	}
 };
+
+void get_cgal_points(std::vector<point_3d> & points, std::vector< CGAL::Simple_cartesian<float>::Point_3> &cgal_points);
+
 
 #endif // !CLOUD_POINT_H
