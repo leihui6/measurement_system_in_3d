@@ -18,8 +18,11 @@ public:
 
 	~osg_viewer();
 
+	// TODO
 	void add_point_cloud(std::vector<point_3d> & points);
 
+private:
+	osg::ref_ptr<osg::Group> root;
 };
 #endif // !OSG_VIEWER_H
 

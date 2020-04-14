@@ -13,9 +13,9 @@ int main()
 
 	m_point_cloud.load_points(point_3d_vec);
 
-	line_func_3d line_func;
+	//line_func_3d line_func;
 
-	fitting_line_3d_linear_least_squares(point_3d_vec, line_func);
+	//fitting_line_3d_linear_least_squares(point_3d_vec, line_func);
 
 	//kd_tree m_kd_tree(m_point_cloud);
 
@@ -29,9 +29,9 @@ int main()
 
 	//m_kd_tree.search_neighbors_radius(10, point_3d_vec[171327], ret_matches);
 
-	//osg_viewer m_osg_viewer;
+	osg_viewer m_osg_viewer;
 
-	//m_osg_viewer.add_point_cloud(point_3d_vec);
+	m_osg_viewer.add_point_cloud(point_3d_vec);
 
 	return 0;
 }
