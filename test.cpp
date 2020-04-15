@@ -1,5 +1,5 @@
 #include "cloud_io.h"
-#include "osg_viewer.h"
+#include "cloud_viewer.h"
 #include "cloud_search.h"
 #include "cloud_geometry.h"
 #include "cloud_registration.h"
@@ -12,9 +12,9 @@ int main()
 
 	load_point_cloud_txt("data/model2.txt", points_2_vec);
 
-	cloud_registration m_cloud_registration;
+	//cloud_registration m_cloud_registration;
 
-	m_cloud_registration.coarse_registration(points_1_vec, points_2_vec);
+	//m_cloud_registration.coarse_registration(points_1_vec, points_2_vec);
 
 	//point_cloud m_point_cloud;
 
@@ -36,11 +36,23 @@ int main()
 
 	//m_kd_tree.search_neighbors_radius(10, point_3d_vec[171327], ret_matches);
 
-	osg_viewer m_osg_viewer;
+	cloud_viewer m_cloud_viewer("demo");
 
-	m_osg_viewer.add_point_cloud(points_1_vec);
+	m_cloud_viewer.add_point_cloud(points_1_vec);
 
-	m_osg_viewer.display();
+	Eigen::Matrix4f test_transform;
+
+	test_transform <<
+		1, 0, 0, 10,
+		0, 1, 0, 10,
+		0, 0, 1, 10,
+		0, 0, 0, 1;
+
+	std::cout << test_transform << std::endl;
+
+	m_cloud_viewer.add_point_cloud(points_1_vec, test_transform);
+
+	m_cloud_viewer.display();
 
 	return 0;
 }
