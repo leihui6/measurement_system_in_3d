@@ -2,16 +2,23 @@
 #include "osg_viewer.h"
 #include "cloud_search.h"
 #include "cloud_geometry.h"
+#include "cloud_registration.h"
 
 int main()
 {
-	std::vector<point_3d> point_3d_vec;
+	std::vector<point_3d> points_1_vec, points_2_vec;
 
-	load_point_cloud_txt("line_point_cloud.txt", point_3d_vec);
+	load_point_cloud_txt("data/model1.txt", points_1_vec);
 
-	point_cloud m_point_cloud;
+	load_point_cloud_txt("data/model2.txt", points_2_vec);
 
-	m_point_cloud.load_points(point_3d_vec);
+	cloud_registration m_cloud_registration;
+
+	m_cloud_registration.coarse_registration(points_1_vec, points_2_vec);
+
+	//point_cloud m_point_cloud;
+
+	//m_point_cloud.load_points(point_3d_vec);
 
 	//line_func_3d line_func;
 
@@ -31,7 +38,9 @@ int main()
 
 	osg_viewer m_osg_viewer;
 
-	m_osg_viewer.add_point_cloud(point_3d_vec);
+	m_osg_viewer.add_point_cloud(points_1_vec);
+
+	m_osg_viewer.display();
 
 	return 0;
 }

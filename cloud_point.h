@@ -1,9 +1,17 @@
 #ifndef CLOUD_POINT_H
 #define CLOUD_POINT_H
 
+// Stardard library in c++ 11 
 #include <vector>
+
+// Eigen
 #include <Eigen/Dense>
+
+// CGAL
 #include <CGAL/Simple_cartesian.h>
+
+// OpenGR
+#include <gr/algorithms/match4pcsBase.h>
 
 struct point_3d 
 {
@@ -52,7 +60,8 @@ struct point_cloud
 	}
 };
 
-void get_cgal_points(std::vector<point_3d> & points, std::vector< CGAL::Simple_cartesian<float>::Point_3> &cgal_points);
+void convert_to_cgal_points(std::vector<point_3d> & points, std::vector< CGAL::Simple_cartesian<float>::Point_3> &cgal_points);
 
+void convert_to_opengr_points(std::vector<point_3d> & points, std::vector<gr::Point3D<float>> & opengr_points);
 
 #endif // !CLOUD_POINT_H

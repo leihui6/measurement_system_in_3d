@@ -1,43 +1,43 @@
 #include "osg_viewer.h"
 
 osg_viewer::osg_viewer()
-	: root(new osg::Group())
+	: m_root(new osg::Group()),
+	m_viewer(new osgViewer::Viewer)
 {
+
 }
 
 osg_viewer::~osg_viewer()
 {
 }
 
-void osg_viewer::add_point_cloud(std::vector<point_3d> & points)
+void osg_viewer::add_point_cloud(std::vector<point_3d> & points, eigen)
 {
 	osg::ref_ptr<osg::Geode> geode = new osg::Geode();
-	// 创建一个 viewer
-	osg::ref_ptr<osgViewer::Viewer> viewer = new osgViewer::Viewer;
-	// 添加状态事件
-	viewer->addEventHandler(new osgGA::StateSetManipulator(viewer->getCamera()->getOrCreateStateSet()));
+	
+	//m_viewer->addEventHandler(new osgGA::StateSetManipulator(m_viewer->getCamera()->getOrCreateStateSet()));
 
 	// 新建一个 osg::GraphicsContext::Traits，描述窗口的属性
-	osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
-	traits->x = 40;
-	traits->y = 40;
-	traits->width = 600;
-	traits->height = 480;
-	traits->windowDecoration = true;
-	traits->doubleBuffer = true;
-	traits->sharedContext = 0;
+	//osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
+	//traits->x = 40;
+	//traits->y = 40;
+	//traits->width = 600;
+	//traits->height = 480;
+	//traits->windowDecoration = true;
+	//traits->doubleBuffer = true;
+	//traits->sharedContext = 0;
 
-	osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
+	//osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 
-	osg::ref_ptr<osg::Camera> camera = new osg::Camera;
-	camera->setGraphicsContext(gc.get());
-	camera->setViewport(new osg::Viewport(0, 0, traits->width, traits->height));
-	GLenum buffer = (traits->doubleBuffer) ? GL_BACK : GL_FRONT;
-	camera->setDrawBuffer(buffer);
-	camera->setReadBuffer(buffer);
+	//osg::ref_ptr<osg::Camera> camera = new osg::Camera;
+	//camera->setGraphicsContext(gc.get());
+	//camera->setViewport(new osg::Viewport(0, 0, traits->width, traits->height));
+	//GLenum buffer = (traits->doubleBuffer) ? GL_BACK : GL_FRONT;
+	//camera->setDrawBuffer(buffer);
+	//camera->setReadBuffer(buffer);
 
 	// add this slave camera to the viewer, with a shift left of the projection matrix
-	viewer->addSlave(camera.get());
+	//m_viewer->addSlave(camera.get());
 
 	osg::ref_ptr<osg::Vec3Array> coords = new osg::Vec3Array();
 
@@ -67,19 +67,25 @@ void osg_viewer::add_point_cloud(std::vector<point_3d> & points)
 
 	geode->addDrawable(geometry.get());
 
-	root->addChild(geode.get());
+	m_root->addChild(geode.get());
+
 
 	//root->getOrCreateStateSet()->setMode(GL_LIGHTING, StateAttribute::OFF | StateAttribute::OVERRIDE);
 
 	// 优化场景数据
-	osgUtil::Optimizer optimizer;
-	optimizer.optimize(root.get());
-	viewer->setSceneData(root.get());
+	//osgUtil::Optimizer optimizer;
+	//optimizer.optimize(m_root.get());
+	//m_viewer->setSceneData(m_root.get());
 
 	// 窗口大小变化事件
-	viewer->addEventHandler(new osgViewer::WindowSizeHandler);
+	//m_viewer->addEventHandler(new osgViewer::WindowSizeHandler);
+}
 
-	viewer->realize();
-	viewer->run();
-	//return viewer->run();
+void osg_viewer::display()
+{
+	std::cout << m_root->getNumChildren() << std::endl;
+
+	m_viewer->setSceneData(m_root.get());
+	//m_viewer->realize();
+	m_viewer->run();
 }
