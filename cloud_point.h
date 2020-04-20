@@ -13,6 +13,9 @@
 // OpenGR
 #include <gr/algorithms/match4pcsBase.h>
 
+// PointMatcher
+#include <pointmatcher/PointMatcher.h>
+
 struct point_3d 
 {
 	point_3d();
@@ -60,8 +63,10 @@ struct point_cloud
 	}
 };
 
-void convert_to_cgal_points(std::vector<point_3d> & points, std::vector< CGAL::Simple_cartesian<float>::Point_3> &cgal_points);
+void convert_to_CGAL_points(std::vector<point_3d> & points, std::vector< CGAL::Simple_cartesian<float>::Point_3> &cgal_points);
 
-void convert_to_opengr_points(std::vector<point_3d> & points, std::vector<gr::Point3D<float>> & opengr_points);
+void convert_to_openGR_points(std::vector<point_3d> & points, std::vector<gr::Point3D<float>> & opengr_points);
+
+void convert_to_pointMatcher_points(std::vector<point_3d> & points, PointMatcher<float>::DataPoints & DP);
 
 #endif // !CLOUD_POINT_H

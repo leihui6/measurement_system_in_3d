@@ -28,7 +28,7 @@ void point_3d::set_rgb(float r, float g, float b)
 	this->b = b;
 }
 
-void convert_to_cgal_points(std::vector<point_3d>& points, std::vector<CGAL::Simple_cartesian<float>::Point_3> & cgal_points)
+void convert_to_CGAL_points(std::vector<point_3d>& points, std::vector<CGAL::Simple_cartesian<float>::Point_3> & cgal_points)
 {
 	//cgal_points.resize(points.size());
 
@@ -38,10 +38,20 @@ void convert_to_cgal_points(std::vector<point_3d>& points, std::vector<CGAL::Sim
 	}
 }
 
-void convert_to_opengr_points(std::vector<point_3d>& points, std::vector<gr::Point3D<float>>& opengr_points)
+void convert_to_openGR_points(std::vector<point_3d>& points, std::vector<gr::Point3D<float>>& opengr_points)
 {
 	for (size_t i = 0; i < points.size(); ++i)
 	{
 		opengr_points.push_back(gr::Point3D<float>(points[i].x, points[i].y, points[i].z));
+	}
+}
+
+void convert_to_pointMatcher_points(std::vector<point_3d>& points, PointMatcher<float>::DataPoints & DP)
+{
+	PointMatcher<float>::Matrix features = PointMatcher<float>::Matrix(3, points.size());
+
+	for (size_t i = 0; i < points.size(); ++i)
+	{
+		//features
 	}
 }

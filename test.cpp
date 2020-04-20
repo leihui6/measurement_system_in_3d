@@ -40,17 +40,21 @@ int main()
 
 	m_cloud_viewer.add_point_cloud(points_1_vec);
 
-	Eigen::Matrix4f test_transform;
+	//m_cloud_viewer.add_test_points();
 
-	test_transform <<
-		1, 0, 0, 10,
-		0, 1, 0, 10,
-		0, 0, 1, 10,
-		0, 0, 0, 1;
+	//Eigen::Matrix4f test_transform;
 
-	std::cout << test_transform << std::endl;
+	//test_transform <<
+	//	1, 0, 0, 10,
+	//	0, 1, 0, 10,
+	//	0, 0, 1, 10,
+	//	0, 0, 0, 1;
 
-	m_cloud_viewer.add_point_cloud(points_1_vec, test_transform);
+	//std::cout << test_transform << std::endl;
+
+	//m_cloud_viewer.add_point_cloud(points_1_vec, test_transform);
+
+	//m_cloud_viewer.add_model("data/cow.osg");
 
 	m_cloud_viewer.display();
 

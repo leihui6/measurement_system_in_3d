@@ -12,6 +12,8 @@ public:
 
 	// TODO, need to interact with upper calls
 	void coarse_registration(std::vector<point_3d> & points1, std::vector<point_3d> &points2);
+
+	void fine_registration(std::vector<point_3d> & points1, std::vector<point_3d> &points2);
 };
 
 #endif // !CLOUD_REGISTRATION_H

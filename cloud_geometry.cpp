@@ -37,7 +37,7 @@ void fitting_line_3d_linear_least_squares(std::vector<point_3d>& points, line_fu
 {
 	std::vector<K::Point_3> cgal_points;
 
-	convert_to_cgal_points(points, cgal_points);
+	convert_to_CGAL_points(points, cgal_points);
 
 	K::Line_3 cgal_line_func;
 

@@ -9,10 +9,27 @@
 #include <osgViewer/ViewerEventHandlers>
 #include <osgGA/StateSetManipulator>
 #include <osg/MatrixTransform>
+#include <osgGA/GUIEventHandler>
+#include <osg/Point>
 #include <osg/Geometry>
 #include <osg/Geode>
-
+#include <osgUtil/SceneView>
+#include <osgUtil/IntersectionVisitor>
+#include <osgViewer/Renderer>
+#include <osgDB/ReadFile>
+#include <osgUtil/Optimizer> 
+#include <osgUtil/DelaunayTriangulator> 
 #include "cloud_point.h"
+
+class PickHandler : public osgGA::GUIEventHandler
+{
+public:
+
+	virtual bool handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa);
+
+	void doUserOperations(osgUtil::LineSegmentIntersector::Intersection& result);
+
+};
 
 class cloud_viewer
 {
@@ -23,6 +40,10 @@ public:
 
 	// TODO
 	void add_point_cloud(std::vector<point_3d> & points, Eigen::Matrix4f transform = Eigen::Matrix4f::Identity());
+
+	void add_model(const std::string & filename);
+
+	void add_test_points();
 
 	void display();
 private:
