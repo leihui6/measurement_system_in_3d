@@ -14,7 +14,7 @@ cloud_registration::~cloud_registration()
 {
 }
 
-void cloud_registration::coarse_registration(std::vector<point_3d>& points1, std::vector<point_3d>& points2)
+void cloud_registration::coarse_registration(std::vector<point_3d>& points1, std::vector<point_3d>& points2, Eigen::Matrix4f & ret_mat)
 {
 	using MatcherType = gr::Match4pcsBase<gr::FunctorSuper4PCS, gr::Point3D<float>, gr::DummyTransformVisitor, gr::AdaptivePointFilter, gr::AdaptivePointFilter::Options>;
 
@@ -25,7 +25,9 @@ void cloud_registration::coarse_registration(std::vector<point_3d>& points1, std
 	convert_to_openGR_points(points2, set2);
 
 	std::vector<Eigen::Matrix2f> tex_coords1, tex_coords2;
-	std::vector<typename gr::Point3D<float>::VectorType> normals1, normals2;
+
+	//std::vector<typename gr::Point3D<float>::VectorType> normals1, normals2;
+
 	std::vector<std::string> mtls1, mtls2;
 
 	// dummy calls, to test symbols accessibility
@@ -36,8 +38,10 @@ void cloud_registration::coarse_registration(std::vector<point_3d>& points1, std
 	MatcherType::OptionsType options;
 
 	// Set parameters.
-	typename MatcherType::MatrixType mat;
+	//typename MatcherType::MatrixType mat;
+
 	double overlap(1);
+
 	options.configureOverlap(overlap);
 
 	typename gr::Point3D<float>::Scalar score = 0;
@@ -48,7 +52,7 @@ void cloud_registration::coarse_registration(std::vector<point_3d>& points1, std
 	gr::DummyTransformVisitor visitor;
 
 	MatcherType matcher(options, logger);
-	score = matcher.ComputeTransformation(set1, set2, mat, sampler, visitor);
+	score = matcher.ComputeTransformation(set1, set2, ret_mat, sampler, visitor);
 
 	//std::cout << mat << std::endl;
 
@@ -57,29 +61,32 @@ void cloud_registration::coarse_registration(std::vector<point_3d>& points1, std
 
 void cloud_registration::fine_registration(std::vector<point_3d>& points1, std::vector<point_3d>& points2)
 {
-	typedef PointMatcher<float> PM;
-	typedef PM::DataPoints DP;
+	//typedef PointMatcher<float> PM;
+	//typedef PM::DataPoints DP;
 
-	// Load point clouds
-	const DP ref;// (DP::load(argv[1]));
-	const DP data;// (DP::load(argv[2]));
+	PointMatcher<float>::DataPoints data_points_1, data_points_2;
+
+	convert_to_pointMatcher_points(points1, data_points_1);
+
+	convert_to_pointMatcher_points(points2, data_points_2);
 
 	// Create the default ICP algorithm
-	PM::ICP icp;
+	PointMatcher<float>::ICP icp;
 
 	// See the implementation of setDefault() to create a custom ICP algorithm
 	icp.setDefault();
 
 	// Compute the transformation to express data in ref
-	PM::TransformationParameters T = icp(data, ref);
+	PointMatcher<float>::TransformationParameters T = icp(data_points_2, data_points_1);
 
 	// Transform data to express it in ref
-	DP data_out(data);
-	icp.transformations.apply(data_out, T);
+	//PointMatcher<float>::DataPoints data_result(data_points_1);
+
+	//icp.transformations.apply(data_result, T);
 
 	// Safe files to see the results
-	//ref.save("test_ref.vtk");
-	//data.save("test_data_in.vtk");
-	//data_out.save("test_data_out.vtk");
-	//cout << "Final transformation:" << endl << T << endl;
+	//data_points_1.save("test_ref.pcd");
+	//data_points_2.save("test_data_in.pcd");
+	//data_result.save("test_data_out.pcd");
+	std::cout << "Final transformation:" << std::endl << T << std::endl;
 }

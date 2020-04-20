@@ -15,6 +15,7 @@
 
 // PointMatcher
 #include <pointmatcher/PointMatcher.h>
+#include <pointmatcher/IO.h>
 
 struct point_3d 
 {

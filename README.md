@@ -13,7 +13,7 @@ This is my final project in master's degree
 - OpenGR(A C++ library for 3D Global Registration) [link](https://github.com/STORM-IRIT/OpenGR)
   - for coarsing registration bwtween two arbitrarily located and arbitrarily oriented point clouds.
 - libpointmatcher with `yaml-cpp-pm` [link](https://github.com/ethz-asl/libpointmatcher) 
-- for "Iterative Closest Point"
+  - for "Iterative Closest Point"
 
 # Demo
 ![](./demo/demo.gif)

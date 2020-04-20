@@ -38,11 +38,11 @@ public:
 
 	~cloud_viewer();
 
-	// TODO
 	void add_point_cloud(std::vector<point_3d> & points, Eigen::Matrix4f transform = Eigen::Matrix4f::Identity());
 
 	void add_model(const std::string & filename);
 
+	// just test, removed in the feature.
 	void add_test_points();
 
 	void display();

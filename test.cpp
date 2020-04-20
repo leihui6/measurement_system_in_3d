@@ -12,9 +12,20 @@ int main()
 
 	load_point_cloud_txt("data/model2.txt", points_2_vec);
 
-	//cloud_registration m_cloud_registration;
+	cloud_registration m_cloud_registration;
 
-	//m_cloud_registration.coarse_registration(points_1_vec, points_2_vec);
+	Eigen::Matrix4f ret_mat;
+
+	// 2->1
+	m_cloud_registration.coarse_registration(points_1_vec, points_2_vec, ret_mat);
+
+	std::cout << ret_mat << std::endl;
+
+
+	// TODO
+
+	// 2 = m*points_2_vec;
+	m_cloud_registration.fine_registration(points_1_vec, points_2_vec);
 
 	//point_cloud m_point_cloud;
 
@@ -38,7 +49,7 @@ int main()
 
 	cloud_viewer m_cloud_viewer("demo");
 
-	m_cloud_viewer.add_point_cloud(points_1_vec);
+	//m_cloud_viewer.add_point_cloud(points_1_vec);
 
 	//m_cloud_viewer.add_test_points();
 
@@ -56,7 +67,13 @@ int main()
 
 	//m_cloud_viewer.add_model("data/cow.osg");
 
-	m_cloud_viewer.display();
+	//m_cloud_viewer.display();
+
+	while (1)
+	{
+		int a;
+		std::cin >> a;
+	}
 
 	return 0;
 }

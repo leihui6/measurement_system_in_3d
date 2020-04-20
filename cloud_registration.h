@@ -10,9 +10,17 @@ public:
 
 	~cloud_registration();
 
-	// TODO, need to interact with upper calls
-	void coarse_registration(std::vector<point_3d> & points1, std::vector<point_3d> &points2);
+	//! TODO, need to interact with upper calls
+	/* 
+	result matrix should be applied to points2
+	points2->points1
+	*/
+	void coarse_registration(std::vector<point_3d> & points1, std::vector<point_3d> &points2, Eigen::Matrix4f & ret_mat);
 
+	/*
+	result matrix should be applied to points2
+	points2->points1
+	*/
 	void fine_registration(std::vector<point_3d> & points1, std::vector<point_3d> &points2);
 };
 

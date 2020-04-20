@@ -29,9 +29,9 @@ bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapt
 void PickHandler::doUserOperations(osgUtil::LineSegmentIntersector::Intersection& result)
 {
 	// test
-	std::ofstream test("test.txt");
-	test << __TIME__ << std::endl;
-	test.close();
+	//std::ofstream test("test.txt");
+	//test << __TIME__ << std::endl;
+	//test.close();
 
 }
 
@@ -63,6 +63,7 @@ cloud_viewer::cloud_viewer(const std::string & window_name)
 
 cloud_viewer::~cloud_viewer()
 {
+
 }
 
 void cloud_viewer::add_point_cloud(std::vector<point_3d> & points, Eigen::Matrix4f t)
@@ -92,12 +93,11 @@ void cloud_viewer::add_point_cloud(std::vector<point_3d> & points, Eigen::Matrix
 	geometry->setNormalArray(normals);
 	geometry->setNormalBinding(osg::Geometry::BIND_OVERALL);
 
-	//geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS, 0, points.size()));
+	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS, 0, points.size()));
 
-	osg::ref_ptr<osgUtil::DelaunayTriangulator> dt = new osgUtil::DelaunayTriangulator(coords.get());
-	dt->triangulate();
-
-	geometry->addPrimitiveSet(dt->getTriangles());
+	//osg::ref_ptr<osgUtil::DelaunayTriangulator> dt = new osgUtil::DelaunayTriangulator(coords.get());
+	//dt->triangulate();
+	//geometry->addPrimitiveSet(dt->getTriangles());
 
 	osg::ref_ptr<osg::MatrixTransform> transformation = new osg::MatrixTransform;
 
