@@ -3,6 +3,7 @@
 
 // Stardard library in c++ 11 
 #include <vector>
+#include <fstream>
 
 // Eigen
 #include <Eigen/Dense>
@@ -32,6 +33,11 @@ struct point_3d
 	float nx, ny, nz;
 
 	float r, g, b;
+
+	void to_eigen_vector4f(Eigen::Vector4f & vector4f_p);
+
+	void do_transform(Eigen::Matrix4f & t, point_3d & p);
+
 };
 
 // as nanoflann required
@@ -69,5 +75,9 @@ void convert_to_CGAL_points(std::vector<point_3d> & points, std::vector< CGAL::S
 void convert_to_openGR_points(std::vector<point_3d> & points, std::vector<gr::Point3D<float>> & opengr_points);
 
 void convert_to_pointMatcher_points(std::vector<point_3d> & points, PointMatcher<float>::DataPoints & DP);
+
+void transform_points(std::vector<point_3d>& points, Eigen::Matrix4f & t, std::vector<point_3d>& ret_points);
+
+void save_points(std::vector<point_3d>& points, const std::string & filename);
 
 #endif // !CLOUD_POINT_H

@@ -8,24 +8,33 @@ int main()
 {
 	std::vector<point_3d> points_1_vec, points_2_vec;
 
-	load_point_cloud_txt("data/model1.txt", points_1_vec);
+	load_point_cloud_txt("data/HeatShield00.txt", points_1_vec);
 
-	load_point_cloud_txt("data/model2.txt", points_2_vec);
+	load_point_cloud_txt("data/HeatShield00_02.txt", points_2_vec);
 
 	cloud_registration m_cloud_registration;
 
-	Eigen::Matrix4f ret_mat;
+	Eigen::Matrix4f coarse_ret_mat,fine_ret_mat;
 
-	// 2->1
-	m_cloud_registration.coarse_registration(points_1_vec, points_2_vec, ret_mat);
+	std::vector<point_3d> points_2_vec_transformed_coarse, points_2_vec_transformed_fine;
 
-	std::cout << ret_mat << std::endl;
+	// coarse registration
+	m_cloud_registration.coarse_registration(points_1_vec, points_2_vec, coarse_ret_mat);
 
+	std::cout << coarse_ret_mat << std::endl;
 
-	// TODO
+	transform_points(points_2_vec, coarse_ret_mat, points_2_vec_transformed_coarse);
 
-	// 2 = m*points_2_vec;
-	m_cloud_registration.fine_registration(points_1_vec, points_2_vec);
+	save_points(points_2_vec_transformed_coarse, "data/HeatShield02_tranformed_coarse.txt");
+
+	// fine registration
+	m_cloud_registration.fine_registration(points_1_vec, points_2_vec_transformed_coarse, fine_ret_mat);
+
+	std::cout << fine_ret_mat << std::endl;
+
+	transform_points(points_2_vec_transformed_coarse, fine_ret_mat, points_2_vec_transformed_fine);
+
+	save_points(points_2_vec_transformed_fine, "data/HeatShield02_tranformed_fine.txt");
 
 	//point_cloud m_point_cloud;
 
@@ -47,7 +56,7 @@ int main()
 
 	//m_kd_tree.search_neighbors_radius(10, point_3d_vec[171327], ret_matches);
 
-	cloud_viewer m_cloud_viewer("demo");
+	//cloud_viewer m_cloud_viewer("demo");
 
 	//m_cloud_viewer.add_point_cloud(points_1_vec);
 

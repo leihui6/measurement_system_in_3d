@@ -59,7 +59,7 @@ void cloud_registration::coarse_registration(std::vector<point_3d>& points1, std
 	logger.Log<gr::Utils::Verbose>("Score: ", score);
 }
 
-void cloud_registration::fine_registration(std::vector<point_3d>& points1, std::vector<point_3d>& points2)
+void cloud_registration::fine_registration(std::vector<point_3d>& points1, std::vector<point_3d>& points2, Eigen::Matrix4f &ret_mat)
 {
 	//typedef PointMatcher<float> PM;
 	//typedef PM::DataPoints DP;
@@ -89,4 +89,6 @@ void cloud_registration::fine_registration(std::vector<point_3d>& points1, std::
 	//data_points_2.save("test_data_in.pcd");
 	//data_result.save("test_data_out.pcd");
 	std::cout << "Final transformation:" << std::endl << T << std::endl;
+
+	ret_mat = T;
 }

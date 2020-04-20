@@ -28,6 +28,23 @@ void point_3d::set_rgb(float r, float g, float b)
 	this->b = b;
 }
 
+void point_3d::to_eigen_vector4f(Eigen::Vector4f & vector4f_p)
+{
+	vector4f_p(0, 0) = x;
+	vector4f_p(1, 0) = y;
+	vector4f_p(2, 0) = z;
+	vector4f_p(3, 0) = 1;
+}
+
+void point_3d::do_transform(Eigen::Matrix4f & t, point_3d & p)
+{
+	Eigen::Vector4f tmp(x, y, z, 1);
+
+	tmp = t * tmp;
+
+	p.set_xyz(tmp(0, 0), tmp(1, 0), tmp(2, 0));
+}
+
 void convert_to_CGAL_points(std::vector<point_3d>& points, std::vector<CGAL::Simple_cartesian<float>::Point_3> & cgal_points)
 {
 	//cgal_points.resize(points.size());
@@ -89,4 +106,28 @@ void convert_to_pointMatcher_points(std::vector<point_3d>& points, PointMatcher<
 	}
 
 	std::cout << std::endl;
+}
+
+void transform_points(std::vector<point_3d>& points, Eigen::Matrix4f & t, std::vector<point_3d>& ret_points)
+{
+	ret_points.resize(points.size());
+
+	for (size_t i = 0; i < points.size(); ++i)
+	{
+		points[i].do_transform(t, ret_points[i]);
+	}
+}
+
+void save_points(std::vector<point_3d>& points, const std::string & filename)
+{
+	std::ofstream of(filename, std::ios::out);
+
+	if (filename.find(".txt") != std::string::npos)
+	{
+		for (size_t i = 0; i < points.size(); ++i)
+		{
+			of << points[i].x << " " << points[i].y << " " << points[i].z << std::endl;
+		}
+		of.close();
+	}
 }
