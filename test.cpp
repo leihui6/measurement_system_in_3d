@@ -1,8 +1,10 @@
 #include "cloud_io.h"
 #include "cloud_viewer.h"
 #include "cloud_search.h"
-#include "cloud_geometry.h"
+#include "cloud_fitting.h"
 #include "cloud_registration.h"
+#include "cloud_processing.h"
+
 
 int main()
 {
@@ -12,16 +14,29 @@ int main()
 
 	load_point_cloud_txt("data/HeatShield00_02.txt", points_2_vec);
 
+	cloud_processing m_cloud_processing;
+
+#ifdef TEST_AVERAGE_SPACING
+	float average_spacing_1, average_spacing_2;
+	m_cloud_processing.get_average_spacing(points_1_vec, average_spacing_1);
+	m_cloud_processing.get_average_spacing(points_2_vec, average_spacing_2);
+	std::cout << "average_spacing_1=" << average_spacing_1 << std::endl;
+	std::cout << "average_spacing_2=" << average_spacing_2 << std::endl;
+#endif // TEST_AVERAGE_SPACING
+
+	m_cloud_processing.estimating_normals_with_k(points_1_vec, 18);
+
+	// registration
 	cloud_registration m_cloud_registration;
 
-	Eigen::Matrix4f coarse_ret_mat,fine_ret_mat;
+	Eigen::Matrix4f coarse_ret_mat,fine_ret_mat,final_registration_matrix;
 
 	std::vector<point_3d> points_2_vec_transformed_coarse, points_2_vec_transformed_fine;
 
 	// coarse registration
 	m_cloud_registration.coarse_registration(points_1_vec, points_2_vec, coarse_ret_mat);
 
-	std::cout << coarse_ret_mat << std::endl;
+	std::cout << "coarse registration matrix is:" << std::endl << coarse_ret_mat << std::endl;
 
 	transform_points(points_2_vec, coarse_ret_mat, points_2_vec_transformed_coarse);
 
@@ -30,11 +45,16 @@ int main()
 	// fine registration
 	m_cloud_registration.fine_registration(points_1_vec, points_2_vec_transformed_coarse, fine_ret_mat);
 
-	std::cout << fine_ret_mat << std::endl;
+	std::cout << "fine registration matrix is:" << std::endl << fine_ret_mat << std::endl;
 
 	transform_points(points_2_vec_transformed_coarse, fine_ret_mat, points_2_vec_transformed_fine);
 
 	save_points(points_2_vec_transformed_fine, "data/HeatShield02_tranformed_fine.txt");
+
+	// get the final registration matrix
+	m_cloud_registration.get_final_transform_matrix(final_registration_matrix);
+
+	std::cout << final_registration_matrix << std::endl;
 
 	//point_cloud m_point_cloud;
 

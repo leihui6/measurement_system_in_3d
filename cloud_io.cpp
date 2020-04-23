@@ -43,5 +43,7 @@ bool load_point_cloud_txt(const std::string & filename, std::vector<point_3d>& p
 		points.push_back(point);
 	}
 
+	std::cout << "opened " << filename << " size of point cloud =" << points.size() << std::endl;
+
 	return true;
 }

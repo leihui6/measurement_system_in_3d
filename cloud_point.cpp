@@ -126,8 +126,16 @@ void save_points(std::vector<point_3d>& points, const std::string & filename)
 	{
 		for (size_t i = 0; i < points.size(); ++i)
 		{
-			of << points[i].x << " " << points[i].y << " " << points[i].z << std::endl;
+			of
+				<< points[i].x << " " << points[i].y << " " << points[i].z << " "
+
+				<< points[i].nx << " " << points[i].ny << " " << points[i].nz << " "
+
+				<< points[i].r << " " << points[i].g << " " << points[i].b
+
+				<< std::endl;
 		}
+
 		of.close();
 	}
 }

@@ -1,4 +1,4 @@
-#include "cloud_geometry.h"
+#include "cloud_fitting.h"
 
 line_func_3d::line_func_3d()
 	:x(0), y(0), z(0),
@@ -28,12 +28,22 @@ plane_func::plane_func()
 }
 
 cylinder_func::cylinder_func()
-	:r(0)
+	: r(0)
 {
 
 }
 
-void fitting_line_3d_linear_least_squares(std::vector<point_3d>& points, line_func_3d & line_func)
+cloud_fitting::cloud_fitting()
+{
+}
+
+
+cloud_fitting::~cloud_fitting()
+{
+
+}
+
+void cloud_fitting::fitting_line_3d_linear_least_squares(std::vector<point_3d>& points, line_func_3d & line_func)
 {
 	std::vector<K::Point_3> cgal_points;
 

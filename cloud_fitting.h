@@ -1,5 +1,4 @@
-#ifndef CLOUD_GEOMETRY_H
-#define CLOUD_GEOMETRY_H
+#pragma once
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/linear_least_squares_fitting_3.h>
@@ -26,7 +25,6 @@ struct plane_func
 	float a, b, c, d;
 };
 
-
 struct cylinder_func
 {
 	cylinder_func();
@@ -38,6 +36,13 @@ struct cylinder_func
 
 typedef CGAL::Simple_cartesian<float> K;
 
-void fitting_line_3d_linear_least_squares(std::vector<point_3d>& points, line_func_3d & line_func);
+class cloud_fitting
+{
+public:
+	cloud_fitting();
 
-#endif // !GEOMETRY_H
+	~cloud_fitting();
+
+	void fitting_line_3d_linear_least_squares(std::vector<point_3d>& points, line_func_3d & line_func);
+};
+
