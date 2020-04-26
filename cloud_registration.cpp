@@ -47,11 +47,15 @@ void cloud_registration::coarse_registration(std::vector<point_3d>& points1, std
 	typename gr::Point3D<float>::Scalar score = 0;
 
 	constexpr gr::Utils::LogLevel loglvl = gr::Utils::Verbose;
+
 	gr::Utils::Logger logger(loglvl);
+
 	gr::UniformDistSampler<gr::Point3D<float> > sampler;
+
 	gr::DummyTransformVisitor visitor;
 
 	MatcherType matcher(options, logger);
+
 	score = matcher.ComputeTransformation(set1, set2, ret_mat, sampler, visitor);
 
 	//std::cout << mat << std::endl;

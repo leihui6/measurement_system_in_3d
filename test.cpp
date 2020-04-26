@@ -5,6 +5,8 @@
 #include "cloud_registration.h"
 #include "cloud_processing.h"
 
+//#define TEST_NORMAL
+//#define TEST_REGISTRATION
 
 int main()
 {
@@ -12,7 +14,7 @@ int main()
 
 	load_point_cloud_txt("data/HeatShield00.txt", points_1_vec);
 
-	load_point_cloud_txt("data/HeatShield00_02.txt", points_2_vec);
+	//load_point_cloud_txt("data/HeatShield00_01.txt", points_2_vec);
 
 	cloud_processing m_cloud_processing;
 
@@ -24,12 +26,25 @@ int main()
 	std::cout << "average_spacing_2=" << average_spacing_2 << std::endl;
 #endif // TEST_AVERAGE_SPACING
 
-	m_cloud_processing.estimating_normals_with_k(points_1_vec, 18);
+#ifdef TEST_NORMAL
+	// estimating the normals of points
+	//m_cloud_processing.estimating_normals_with_radius(points_1_vec, 1.0);
 
+	//m_cloud_processing.estimate_normals_with_k(points_1_vec, 18);
+
+	//m_cloud_processing.filter_remove_outliers(points_1_vec, 18, 0.5);
+
+	m_cloud_processing.filter_simplify_grid(points_2_vec, 0.25);
+
+	//m_cloud_processing.filter_simplify_wlop(points_2_vec, 8.0, 1.0);
+
+#endif // TEST_NORMAL
+
+#ifdef TEST_REGISTRATION
 	// registration
 	cloud_registration m_cloud_registration;
 
-	Eigen::Matrix4f coarse_ret_mat,fine_ret_mat,final_registration_matrix;
+	Eigen::Matrix4f coarse_ret_mat, fine_ret_mat, final_registration_matrix;
 
 	std::vector<point_3d> points_2_vec_transformed_coarse, points_2_vec_transformed_fine;
 
@@ -40,7 +55,7 @@ int main()
 
 	transform_points(points_2_vec, coarse_ret_mat, points_2_vec_transformed_coarse);
 
-	save_points(points_2_vec_transformed_coarse, "data/HeatShield02_tranformed_coarse.txt");
+	save_points(points_2_vec_transformed_coarse, "data/HeatShield01_tranformed_coarse.txt");
 
 	// fine registration
 	m_cloud_registration.fine_registration(points_1_vec, points_2_vec_transformed_coarse, fine_ret_mat);
@@ -49,12 +64,14 @@ int main()
 
 	transform_points(points_2_vec_transformed_coarse, fine_ret_mat, points_2_vec_transformed_fine);
 
-	save_points(points_2_vec_transformed_fine, "data/HeatShield02_tranformed_fine.txt");
+	save_points(points_2_vec_transformed_fine, "data/HeatShield01_tranformed_fine.txt");
 
 	// get the final registration matrix
 	m_cloud_registration.get_final_transform_matrix(final_registration_matrix);
 
 	std::cout << final_registration_matrix << std::endl;
+
+#endif // TEST_REGISTRATION
 
 	//point_cloud m_point_cloud;
 
@@ -76,9 +93,9 @@ int main()
 
 	//m_kd_tree.search_neighbors_radius(10, point_3d_vec[171327], ret_matches);
 
-	//cloud_viewer m_cloud_viewer("demo");
+	cloud_viewer m_cloud_viewer("demo");
 
-	//m_cloud_viewer.add_point_cloud(points_1_vec);
+	m_cloud_viewer.add_point_cloud(points_1_vec);
 
 	//m_cloud_viewer.add_test_points();
 
@@ -96,13 +113,7 @@ int main()
 
 	//m_cloud_viewer.add_model("data/cow.osg");
 
-	//m_cloud_viewer.display();
-
-	while (1)
-	{
-		int a;
-		std::cin >> a;
-	}
+	m_cloud_viewer.display();
 
 	return 0;
 }

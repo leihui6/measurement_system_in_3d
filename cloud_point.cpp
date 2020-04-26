@@ -55,6 +55,16 @@ void convert_to_CGAL_points(std::vector<point_3d>& points, std::vector<CGAL::Sim
 	}
 }
 
+void convert_to_original_points(std::vector<CGAL::Simple_cartesian<float>::Point_3>& cgal_points, std::vector<point_3d>& points)
+{
+	points.resize(cgal_points.size());
+
+	for (size_t i = 0; i < cgal_points.size(); ++i)
+	{
+		points[i].set_xyz(cgal_points[i].x(), cgal_points[i].y(), cgal_points[i].z());
+	}
+}
+
 void convert_to_openGR_points(std::vector<point_3d>& points, std::vector<gr::Point3D<float>>& opengr_points)
 {
 	for (size_t i = 0; i < points.size(); ++i)

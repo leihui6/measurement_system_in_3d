@@ -19,17 +19,9 @@
 #include <osgDB/ReadFile>
 #include <osgUtil/Optimizer> 
 #include <osgUtil/DelaunayTriangulator> 
+#include <osgGA/TrackballManipulator>
+
 #include "cloud_point.h"
-
-class PickHandler : public osgGA::GUIEventHandler
-{
-public:
-
-	virtual bool handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa);
-
-	void doUserOperations(osgUtil::LineSegmentIntersector::Intersection& result);
-
-};
 
 class cloud_viewer
 {
@@ -38,7 +30,14 @@ public:
 
 	~cloud_viewer();
 
-	void add_point_cloud(std::vector<point_3d> & points, Eigen::Matrix4f transform = Eigen::Matrix4f::Identity());
+	void add_point_cloud_with_color(
+		std::vector<point_3d> & points,
+		Eigen::Matrix4f transform = Eigen::Matrix4f::Identity(),
+		float r = 0, float g = 0, float b = 0);
+
+	void add_point_cloud(
+		std::vector<point_3d> & points,
+		Eigen::Matrix4f transform = Eigen::Matrix4f::Identity());
 
 	void add_model(const std::string & filename);
 
@@ -50,6 +49,28 @@ private:
 	osg::ref_ptr<osg::Group> m_root;
 
 	osg::ref_ptr<osgViewer::Viewer> m_viewer;
+
+	void points_to_geometry_node(std::vector<point_3d> & points, osg::ref_ptr<osg::Geometry> geometry, float r = 0, float g = 0, float b = 0);
+};
+
+
+class PickHandler : public osgGA::GUIEventHandler
+{
+public:
+
+	PickHandler(cloud_viewer * _cloud_viewer)
+	{
+		m_cloud_viewer = _cloud_viewer;
+	}
+
+	virtual bool handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa);
+
+	void doUserOperations(osgUtil::LineSegmentIntersector::Intersection& result);
+
+private:
+	cloud_viewer * m_cloud_viewer;
+
+	std::vector<point_3d> points_test;
 };
 #endif // !cloud_viewer_H
 
