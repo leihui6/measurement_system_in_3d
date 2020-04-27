@@ -5,7 +5,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "cloud_point.h"
+#include "cloud_geometry.h"
 
 bool load_point_cloud_txt(const std::string & filename, std::vector<point_3d> & points);
 

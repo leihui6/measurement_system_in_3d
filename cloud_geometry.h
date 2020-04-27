@@ -18,9 +18,16 @@
 #include <pointmatcher/PointMatcher.h>
 #include <pointmatcher/IO.h>
 
+// OSG
+#include <OSG/Vec3d>
+
 struct point_3d 
 {
+	point_3d(const point_3d & p);
+
 	point_3d();
+
+	point_3d(float x, float y, float z);
 
 	void set_xyz(float x, float y, float z);
 
@@ -38,6 +45,7 @@ struct point_3d
 
 	void do_transform(Eigen::Matrix4f & t, point_3d & p);
 
+	friend std::ostream & operator << (std::ostream & os, const point_3d & p);
 };
 
 // as nanoflann required
@@ -70,6 +78,37 @@ struct point_cloud
 	}
 };
 
+struct line_func_3d
+{
+	line_func_3d();
+
+	float x, y, z;
+
+	float n, m, l;
+
+	void set_xyz(float x, float y, float z);
+
+	void set_nml(float n, float m, float l);
+};
+
+struct plane_func
+{
+	plane_func();
+
+	float a, b, c, d;
+};
+
+struct cylinder_func
+{
+	cylinder_func();
+
+	line_func_3d m_line_func;
+
+	float r;
+};
+
+point_3d to_point_3d(osg::Vec3d & p);
+
 void convert_to_CGAL_points(std::vector<point_3d> & points, std::vector< CGAL::Simple_cartesian<float>::Point_3> &cgal_points);
 
 void convert_to_original_points(std::vector< CGAL::Simple_cartesian<float>::Point_3> &cgal_points, std::vector<point_3d> & points);
@@ -80,6 +119,12 @@ void convert_to_pointMatcher_points(std::vector<point_3d> & points, PointMatcher
 
 void transform_points(std::vector<point_3d>& points, Eigen::Matrix4f & t, std::vector<point_3d>& ret_points);
 
-void save_points(std::vector<point_3d>& points, const std::string & filename);
+void pedalpoint_point_to_line(const point_3d & point, const line_func_3d & _line_func_3d, point_3d & pedalpoint);
+
+void distance_points_to_line(const std::vector<point_3d>& points, const line_func_3d & _line_func_3d, std::vector<float>& points_dis_vec);
+
+void distance_point_to_point(const point_3d & point_1, const point_3d & point_2, float & distance);
+
+void save_points(const std::vector<point_3d>& points, const std::string & filename);
 
 #endif // !CLOUD_POINT_H

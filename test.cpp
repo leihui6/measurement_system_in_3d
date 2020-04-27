@@ -97,6 +97,8 @@ int main()
 
 	m_cloud_viewer.add_point_cloud(points_1_vec);
 
+	m_cloud_viewer.set_the_target_points(&points_1_vec);
+
 	//m_cloud_viewer.add_test_points();
 
 	//Eigen::Matrix4f test_transform;

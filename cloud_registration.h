@@ -1,7 +1,7 @@
 #ifndef CLOUD_REGISTRATION_H
 #define CLOUD_REGISTRATION_H
 
-#include "cloud_point.h"
+#include "cloud_geometry.h"
 
 class cloud_registration
 {

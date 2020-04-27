@@ -2,7 +2,7 @@
 #define CLOUD_SEARCH_H
 
 #include <nanoflann.hpp>
-#include "cloud_point.h"
+#include "cloud_geometry.h"
 
 using namespace nanoflann;
 

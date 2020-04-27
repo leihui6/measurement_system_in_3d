@@ -6,66 +6,51 @@ bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapt
 	if (ea.getEventType() != osgGA::GUIEventAdapter::RELEASE ||
 		ea.getButton() != osgGA::GUIEventAdapter::LEFT_MOUSE_BUTTON ||
 		!(ea.getModKeyMask()&osgGA::GUIEventAdapter::MODKEY_CTRL))
+	{
 		return false;
+	}
 
-	osgViewer::View* viewer = dynamic_cast<osgViewer::View*>(&aa);
+	osg::ref_ptr< osgViewer::View> viewer = dynamic_cast<osgViewer::View*>(&aa);
+
 	if (viewer)
 	{
-		std::cout << ea.getX() << ea.getY() << std::endl;
+		osg::Vec3d window(ea.getX(), ea.getY(), 0), world, eye;
 
-		osg::Vec3 window(ea.getX(), ea.getY(), 0);
+		line_func_3d _line_func_3d;
 
-		osg::Vec3 object;
+		screen_to_world(viewer, window, world);
 
-		osg::ref_ptr<osg::Camera> camera = viewer->getCamera();
-		//osg::Vec3d vScreen(x,y, 0);
-		osg::Matrix mVPW = camera->getViewMatrix() * camera->getProjectionMatrix();
+		get_eye_point(viewer, eye);
 
-		//if (camera->getViewport())
-		//{
-			mVPW = mVPW * camera->getViewport()->computeWindowMatrix();
-		//}
+		std::cout << eye.x() << " " << eye.y() << " " << eye.z() << " " << std::endl;
 
-		osg::Matrix invertVPW;
-		invertVPW.invert(mVPW);
-		object = window * invertVPW;
+		get_ray_line_func(world, eye, _line_func_3d);
 
-		std::cout << object.x() << " " << object.y() << " " << object.z() << " " << std::endl;
+		point_3d pick_point;
 
-		point_3d one_point;
+		m_cloud_viewer->get_pick_point(_line_func_3d, to_point_3d(eye), pick_point, 0.1);
+		
+		std::cout << pick_point << std::endl;
 
-		one_point.set_xyz(object.x(), object.y(), object.z());
+		// test
+		point_3d test_one_point;
 
-		points_test.push_back(one_point);
+		//test_one_point.set_xyz(world.x(), world.y(), world.z());
 
-		m_cloud_viewer->add_point_cloud_with_color(points_test, Eigen::Matrix4f::Identity(), 255, 255, 255);
+		//points_test.push_back(test_one_point);
 
-		if (points_test.size() == 10)
-		{
-			save_points(points_test, "data/test_pick_points.txt");
-		}
+		//test_one_point.set_xyz(pick_point.x(), pick_point.y(), pick_point.z());
 
-		//osg::ref_ptr<osgUtil::LineSegmentIntersector> intersector =
-		//	new osgUtil::LineSegmentIntersector(osgUtil::Intersector::WINDOW, ea.getX(), ea.getY());
-		//osgUtil::IntersectionVisitor iv(intersector.get());
-		//viewer->getCamera()->accept(iv);
+		points_test.push_back(pick_point);
 
-		//if (intersector->containsIntersections())
-		//{
-		//	osgUtil::LineSegmentIntersector::Intersection result = *(intersector->getIntersections().begin());
-		//	
-		//	doUserOperations(result);
-		//}
+		//m_cloud_viewer->add_lines(points_test, 255, 255, 255);
+		m_cloud_viewer->add_point_cloud_with_color(points_test, 10, Eigen::Matrix4f::Identity(), 255, 255, 255);
 	}
 	return false;
 }
 
 void PickHandler::doUserOperations(osgUtil::LineSegmentIntersector::Intersection& result)
 {
-	// test
-	//std::ofstream test("test.txt");
-	//test << __TIME__ << std::endl;
-	//test.close();
 
 }
 
@@ -101,13 +86,19 @@ cloud_viewer::~cloud_viewer()
 
 }
 
-void cloud_viewer::add_point_cloud_with_color(std::vector<point_3d> & points, Eigen::Matrix4f t, float r, float g, float b)
+void cloud_viewer::add_point_cloud_with_color(std::vector<point_3d> & points, float point_size, Eigen::Matrix4f t, float r, float g, float b)
 {
 	osg::ref_ptr<osg::Geode> geode = new osg::Geode();
 
 	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
 
 	points_to_geometry_node(points, geometry, r, g, b);
+
+	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS, 0, points.size()));
+	osg::StateSet* stateSet = geometry->getOrCreateStateSet();
+	osg::Point* state_point_size = new osg::Point;
+	state_point_size->setSize(point_size);
+	stateSet->setAttribute(state_point_size);
 
 	geode->addDrawable(geometry);
 
@@ -128,13 +119,19 @@ void cloud_viewer::add_point_cloud_with_color(std::vector<point_3d> & points, Ei
 	m_viewer->run();
 }
 
-void cloud_viewer::add_point_cloud(std::vector<point_3d> & points, Eigen::Matrix4f t)
+void cloud_viewer::add_point_cloud(std::vector<point_3d> & points, float point_size, Eigen::Matrix4f t)
 {
 	osg::ref_ptr<osg::Geode> geode = new osg::Geode();
 
 	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
 
 	points_to_geometry_node(points, geometry);
+
+	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS, 0, points.size()));
+	osg::StateSet* stateSet = geometry->getOrCreateStateSet();
+	osg::Point* state_point_size = new osg::Point;
+	state_point_size->setSize(point_size);
+	stateSet->setAttribute(state_point_size);
 
 	geode->addDrawable(geometry);
 
@@ -153,6 +150,23 @@ void cloud_viewer::add_point_cloud(std::vector<point_3d> & points, Eigen::Matrix
 	m_root->addChild(geode.get());
 
 	//m_viewer->run();
+}
+
+void cloud_viewer::add_lines(std::vector<point_3d>& points,float r,float g,float b)
+{
+	osg::ref_ptr<osg::Geode> geode = new osg::Geode();
+
+	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+
+	points_to_geometry_node(points, geometry, r, g, b);
+
+	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES, 0, points.size()));
+	osg::ref_ptr<osg::LineWidth> lw = new osg::LineWidth(3.0);
+	geometry->getOrCreateStateSet()->setAttribute(lw, osg::StateAttribute::ON);
+
+	geode->addDrawable(geometry);
+
+	m_root->addChild(geode.get());
 }
 
 void cloud_viewer::add_model(const std::string & filename)
@@ -225,6 +239,48 @@ void cloud_viewer::display()
 	m_viewer->run();
 }
 
+void cloud_viewer::get_pick_point(const line_func_3d & _line_func_3d, const point_3d & eye_point, point_3d & pick_point, float dis_threshold_with_ray)
+{
+	std::vector<float> distance_vec;
+
+	distance_points_to_line(*m_target_points, _line_func_3d, distance_vec);
+
+	float min_dis = FLT_MAX;
+
+	size_t pick_point_index = UINT64_MAX;
+
+	for (size_t i = 0; i < distance_vec.size(); ++i)
+	{
+		if (distance_vec[i] < dis_threshold_with_ray)
+		{
+			float dis_to_eye;
+
+			distance_point_to_point((*m_target_points)[i], eye_point, dis_to_eye);
+
+			if (dis_to_eye < min_dis)
+			{
+				min_dis = dis_to_eye;
+
+				pick_point_index = i;
+			}
+		}
+	}
+
+	if (pick_point_index != UINT64_MAX)
+	{
+		pick_point.set_xyz((*m_target_points)[pick_point_index].x, (*m_target_points)[pick_point_index].y, (*m_target_points)[pick_point_index].z);
+	}
+	else
+	{
+		pick_point.set_xyz(0, 0, 0);
+	}
+}
+
+void cloud_viewer::set_the_target_points(std::vector<point_3d>* points)
+{
+	m_target_points = points;
+}
+
 void cloud_viewer::points_to_geometry_node(std::vector<point_3d>& points, osg::ref_ptr<osg::Geometry> geometry, float r, float g, float b)
 {
 	osg::ref_ptr<osg::Vec3Array> coords = new osg::Vec3Array();
@@ -261,12 +317,34 @@ void cloud_viewer::points_to_geometry_node(std::vector<point_3d>& points, osg::r
 
 	geometry->setNormalArray(normals);
 	geometry->setNormalBinding(osg::Geometry::BIND_OVERALL);
+}
 
-	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS, 0, points.size()));
+void PickHandler::screen_to_world(osg::ref_ptr<osgViewer::View> viewer, osg::Vec3d & screen_point, osg::Vec3d & world)
+{
+	osg::ref_ptr<osg::Camera> camera = viewer->getCamera();
 
-	osg::StateSet* stateSet = geometry->getOrCreateStateSet();
-	osg::Point* state_point_size = new osg::Point;
-	state_point_size->setSize(4.0);
-	stateSet->setAttribute(state_point_size);
+	osg::Matrix mVPW = camera->getViewMatrix() * camera->getProjectionMatrix();
+
+	mVPW = mVPW * camera->getViewport()->computeWindowMatrix();
+
+	osg::Matrix invertVPW;
+
+	invertVPW.invert(mVPW);
+
+	world = screen_point * invertVPW;
+}
+
+void PickHandler::get_eye_point(osg::ref_ptr<osgViewer::View> viewer, osg::Vec3d & eye)
+{
+	osg::Vec3d center, up;
+
+	viewer->getCamera()->getViewMatrixAsLookAt(eye, center, up);
+}
+
+void PickHandler::get_ray_line_func(osg::Vec3d & world, osg::Vec3d & eye, line_func_3d & _line_func_3d)
+{
+	_line_func_3d.set_xyz(eye.x(), eye.y(), eye.z());
+
+	_line_func_3d.set_nml(world.x() - eye.x(), world.y() - eye.y(), world.z() - eye.z());
 }
 

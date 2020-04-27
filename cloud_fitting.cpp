@@ -1,38 +1,5 @@
 #include "cloud_fitting.h"
 
-line_func_3d::line_func_3d()
-	:x(0), y(0), z(0),
-	n(0), m(0), l(0)
-{
-
-}
-
-void line_func_3d::set_xyz(float x, float y, float z)
-{
-	this->x = x;
-	this->y = y;
-	this->z = z;
-}
-
-void line_func_3d::set_nml(float n, float m, float l)
-{
-	this->n = n;
-	this->m = m;
-	this->l = l;
-}
-
-plane_func::plane_func()
-	: a(0), b(0), c(0), d(0)
-{
-
-}
-
-cylinder_func::cylinder_func()
-	: r(0)
-{
-
-}
-
 cloud_fitting::cloud_fitting()
 {
 }

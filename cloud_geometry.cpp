@@ -1,10 +1,30 @@
-#include "cloud_point.h"
+#include "cloud_geometry.h"
+
+point_3d::point_3d(const point_3d & p)
+{
+	this->x = p.x;
+	this->y = p.y;
+	this->z = p.z;
+	this->nx = p.nx;
+	this->ny = p.ny;
+	this->nz = p.nz;
+	this->r = p.r;
+	this->g = p.g;
+	this->b = p.b;
+}
 
 point_3d::point_3d()
 	:x(0), y(0), z(0),
 	nx(0), ny(0), nz(0),
 	r(0), g(0), b(0)
 {
+}
+
+point_3d::point_3d(float x, float y, float z)
+{
+	this->x = x;
+	this->y = y;
+	this->z = z;
 }
 
 void point_3d::set_xyz(float x, float y, float z)
@@ -43,6 +63,55 @@ void point_3d::do_transform(Eigen::Matrix4f & t, point_3d & p)
 	tmp = t * tmp;
 
 	p.set_xyz(tmp(0, 0), tmp(1, 0), tmp(2, 0));
+}
+
+std::ostream & operator << (std::ostream & os, const point_3d & p)
+{
+	std::cout
+		<< "(x,y,z,nx,ny,nz,r,g,b)="
+		<< p.x << " " << p.y << " " << p.z << " "
+		<< p.nx << " " << p.ny << " " << p.nz << " "
+		<< p.r << " " << p.g << " " << p.b
+		<< std::endl;
+	return os;
+}
+
+line_func_3d::line_func_3d()
+	:x(0), y(0), z(0),
+	n(0), m(0), l(0)
+{
+
+}
+
+void line_func_3d::set_xyz(float x, float y, float z)
+{
+	this->x = x;
+	this->y = y;
+	this->z = z;
+}
+
+void line_func_3d::set_nml(float n, float m, float l)
+{
+	this->n = n;
+	this->m = m;
+	this->l = l;
+}
+
+plane_func::plane_func()
+	: a(0), b(0), c(0), d(0)
+{
+
+}
+
+cylinder_func::cylinder_func()
+	: r(0)
+{
+
+}
+
+point_3d to_point_3d(osg::Vec3d & p)
+{
+	return point_3d(p.x(), p.y(), p.z());
 }
 
 void convert_to_CGAL_points(std::vector<point_3d>& points, std::vector<CGAL::Simple_cartesian<float>::Point_3> & cgal_points)
@@ -128,7 +197,49 @@ void transform_points(std::vector<point_3d>& points, Eigen::Matrix4f & t, std::v
 	}
 }
 
-void save_points(std::vector<point_3d>& points, const std::string & filename)
+void pedalpoint_point_to_line(const point_3d & point, const line_func_3d & _line_func_3d, point_3d & pedalpoint)
+{
+	float
+		x0 = _line_func_3d.x,
+		y0 = _line_func_3d.y,
+		z0 = _line_func_3d.z,
+		n = _line_func_3d.n,
+		m = _line_func_3d.m,
+		l = _line_func_3d.l,
+		x1 = point.x,
+		y1 = point.y,
+		z1 = point.z;
+
+	pedalpoint.x = (l * l * x0 + m * m * x0 + n * n * x1 - l * n*z0 - m * n*y0 + l * n*z1 + m * n*y1) / (l *l + m * m + n * n);
+	pedalpoint.y = (l * l * y0 + m * m * y1 + n * n * y0 - l * m*z0 - m * n*x0 + l * m*z1 + m * n*x1) / (l *l + m * m + n * n);
+	pedalpoint.z = (l * l * z1 + m * m * z0 + n * n * z0 - l * m*y0 - l * n*x0 + l * m*y1 + l * n*x1) / (l *l + m * m + n * n);
+}
+
+void distance_points_to_line(const std::vector<point_3d>& points, const line_func_3d & _line_func_3d, std::vector<float>& points_dis_vec)
+{
+	points_dis_vec.resize(points.size());
+
+	for (size_t i = 0; i < points.size(); i++)
+	{
+		point_3d pedal_point; float dis = 0;
+
+		pedalpoint_point_to_line(points[i], _line_func_3d, pedal_point);
+
+		distance_point_to_point(points[i], pedal_point, dis);
+
+		points_dis_vec[i] = dis;
+	}
+}
+
+void distance_point_to_point(const point_3d & point_1, const point_3d & point_2, float & distance)
+{
+	distance = sqrt(
+		(point_1.x - point_2.x)*(point_1.x - point_2.x) +
+		(point_1.y - point_2.y)*(point_1.y - point_2.y) +
+		(point_1.z - point_2.z)*(point_1.z - point_2.z));
+}
+
+void save_points(const std::vector<point_3d>& points, const std::string & filename)
 {
 	std::ofstream of(filename, std::ios::out);
 

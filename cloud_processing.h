@@ -10,7 +10,7 @@
 #include <CGAL/grid_simplify_point_set.h>
 #include <CGAL/wlop_simplify_and_regularize_point_set.h>
 
-#include "cloud_point.h"
+#include "cloud_geometry.h"
 
 #ifdef CGAL_LINKED_WITH_TBB
 typedef CGAL::Parallel_tag Concurrency_tag;
