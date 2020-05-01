@@ -22,6 +22,12 @@ public:
 
 	size_t search_neighbors_radius(float search_radius, point_3d & p, std::vector<std::pair<size_t, float> > & ret_matches);
 
+	void search_points_correspondence(std::vector<point_3d> & points, kd_tree & other_kd_tree, std::vector<point_3d> & other_points);
+
+	void get_point(size_t i, point_3d &p);
+
+	point_3d get_point(size_t i);
+
 private:
 
 	kd_tree_t m_kd_tree_t;

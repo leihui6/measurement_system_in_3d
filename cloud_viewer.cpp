@@ -1,5 +1,9 @@
 #include "cloud_viewer.h"
 
+PickHandler::PickHandler(cloud_viewer * _cloud_viewer)
+{
+	m_cloud_viewer = _cloud_viewer;
+}
 
 bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa)
 {
@@ -14,49 +18,51 @@ bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapt
 
 	if (viewer)
 	{
-		osg::Vec3d window(ea.getX(), ea.getY(), 0), world, eye;
+		point_3d pp; // picked point
+		bool is_clicked = get_picked_point(viewer, ea.getX(), ea.getY(), pp);
 
-		line_func_3d _line_func_3d;
+		if (is_clicked)
+		{
+			std::cout << "picked point=" << pp << std::endl;
+			// darw this point on cloud.
+			m_picked_points.push_back(pp);
+			m_cloud_viewer->add_point_cloud_with_color(m_picked_points, 10, Eigen::Matrix4f::Identity(), 255, 255, 255);
+		}
+		else
+		{
+			std::cout << "No points is in clicked zone." << std::endl;
+		}
 
-		screen_to_world(viewer, window, world);
-
-		get_eye_point(viewer, eye);
-
-		std::cout << eye.x() << " " << eye.y() << " " << eye.z() << " " << std::endl;
-
-		get_ray_line_func(world, eye, _line_func_3d);
-
-		point_3d pick_point;
-
-		m_cloud_viewer->get_pick_point(_line_func_3d, to_point_3d(eye), pick_point, 0.1);
-		
-		std::cout << pick_point << std::endl;
-
-		// test
-		point_3d test_one_point;
-
-		//test_one_point.set_xyz(world.x(), world.y(), world.z());
-
-		//points_test.push_back(test_one_point);
-
-		//test_one_point.set_xyz(pick_point.x(), pick_point.y(), pick_point.z());
-
-		points_test.push_back(pick_point);
-
-		//m_cloud_viewer->add_lines(points_test, 255, 255, 255);
-		m_cloud_viewer->add_point_cloud_with_color(points_test, 10, Eigen::Matrix4f::Identity(), 255, 255, 255);
 	}
 	return false;
 }
 
-void PickHandler::doUserOperations(osgUtil::LineSegmentIntersector::Intersection& result)
+void PickHandler::get_picked_points(std::vector<point_3d>& picked_points)
 {
+	picked_points = m_picked_points;
+}
 
+bool PickHandler::get_picked_point(osg::ref_ptr< osgViewer::View> viewer, float window_x, float window_y, point_3d & p)
+{
+	osg::Vec3d window(window_x, window_y, 0), world, eye;
+
+	line_func_3d _line_func_3d;
+
+	screen_to_world(viewer, window, world);
+
+	get_eye_point(viewer, eye);
+
+	//std::cout << eye.x() << " " << eye.y() << " " << eye.z() << " " << std::endl;
+
+	get_ray_line_func(world, eye, _line_func_3d);
+
+	return calc_intersection_between_ray_and_points(_line_func_3d, to_point_3d(eye), p, 0.1);
 }
 
 cloud_viewer::cloud_viewer(const std::string & window_name)
 	: m_root(new osg::Group()),
-	m_viewer(new osgViewer::Viewer)
+	m_viewer(new osgViewer::Viewer),
+	m_is_set_target(false)
 {
 	//m_viewer->addEventHandler(new osgGA::StateSetManipulator(m_viewer->getCamera()->getOrCreateStateSet()));
 	m_viewer->setCameraManipulator(new osgGA::TrackballManipulator);
@@ -77,6 +83,8 @@ cloud_viewer::cloud_viewer(const std::string & window_name)
 	GLenum buffer = (traits->doubleBuffer) ? GL_BACK : GL_FRONT;
 	camera->setDrawBuffer(buffer);
 	camera->setReadBuffer(buffer);
+
+	m_selector = new PickHandler(this);
 
 	//m_viewer->addSlave(camera.get());
 }
@@ -114,9 +122,7 @@ void cloud_viewer::add_point_cloud_with_color(std::vector<point_3d> & points, fl
 
 	m_root->addChild(transformation.get());
 
-	m_root->addChild(geode.get());
-
-	m_viewer->run();
+	transformation->addChild(geode.get());
 }
 
 void cloud_viewer::add_point_cloud(std::vector<point_3d> & points, float point_size, Eigen::Matrix4f t)
@@ -147,12 +153,10 @@ void cloud_viewer::add_point_cloud(std::vector<point_3d> & points, float point_s
 
 	m_root->addChild(transformation.get());
 
-	m_root->addChild(geode.get());
-
-	//m_viewer->run();
+	transformation->addChild(geode.get());
 }
 
-void cloud_viewer::add_lines(std::vector<point_3d>& points,float r,float g,float b)
+void cloud_viewer::add_lines(std::vector<point_3d>& points, float line_width, float r,float g,float b)
 {
 	osg::ref_ptr<osg::Geode> geode = new osg::Geode();
 
@@ -161,7 +165,9 @@ void cloud_viewer::add_lines(std::vector<point_3d>& points,float r,float g,float
 	points_to_geometry_node(points, geometry, r, g, b);
 
 	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES, 0, points.size()));
-	osg::ref_ptr<osg::LineWidth> lw = new osg::LineWidth(3.0);
+
+	osg::ref_ptr<osg::LineWidth> lw = new osg::LineWidth(line_width);
+	
 	geometry->getOrCreateStateSet()->setAttribute(lw, osg::StateAttribute::ON);
 
 	geode->addDrawable(geometry);
@@ -184,50 +190,11 @@ void cloud_viewer::add_model(const std::string & filename)
 	m_root->addChild(node.get());
 }
 
-void cloud_viewer::add_test_points()
-{
-	const osg::Vec4 normalColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-	osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array(8);
-	(*vertices)[0].set(-0.5f, -0.5f, -0.5f);
-	(*vertices)[1].set(0.5f, -0.5f, -0.5f);
-	(*vertices)[2].set(0.5f, 0.5f, -0.5f);
-	(*vertices)[3].set(-0.5f, 0.5f, -0.5f);
-	(*vertices)[4].set(-0.5f, -0.5f, 0.5f);
-	(*vertices)[5].set(0.5f, -0.5f, 0.5f);
-	(*vertices)[6].set(0.5f, 0.5f, 0.5f);
-	(*vertices)[7].set(-0.5f, 0.5f, 0.5f);
-
-	osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array(1);
-	(*colors)[0] = normalColor;
-
-	osg::ref_ptr<osg::DrawElementsUInt> indices = new osg::DrawElementsUInt(GL_QUADS, 24);
-	(*indices)[0] = 0; (*indices)[1] = 1; (*indices)[2] = 2; (*indices)[3] = 3;
-	(*indices)[4] = 4; (*indices)[5] = 5; (*indices)[6] = 6; (*indices)[7] = 7;
-	(*indices)[8] = 0; (*indices)[9] = 1; (*indices)[10] = 5; (*indices)[11] = 4;
-	(*indices)[12] = 1; (*indices)[13] = 2; (*indices)[14] = 6; (*indices)[15] = 5;
-	(*indices)[16] = 2; (*indices)[17] = 3; (*indices)[18] = 7; (*indices)[19] = 6;
-	(*indices)[20] = 3; (*indices)[21] = 0; (*indices)[22] = 4; (*indices)[23] = 7;
-
-	osg::ref_ptr<osg::Geometry> geom = new osg::Geometry;
-	geom->setDataVariance(osg::Object::DYNAMIC);
-	geom->setUseDisplayList(false);
-	geom->setUseVertexBufferObjects(true);
-	geom->setVertexArray(vertices.get());
-	geom->setColorArray(colors.get());
-	geom->setColorBinding(osg::Geometry::BIND_OVERALL);
-	geom->addPrimitiveSet(indices.get());
-
-	m_root->addChild(geom);
-}
-
 void cloud_viewer::display()
 {
 	std::cout << "display()" << m_root->getNumChildren() << std::endl;;
 
-	osg::ref_ptr<PickHandler> selector = new PickHandler(this);
-
-	m_viewer->addEventHandler(selector.get());
+	m_viewer->addEventHandler(m_selector.get());
 
 	m_viewer->setSceneData(m_root.get());
 
@@ -239,46 +206,21 @@ void cloud_viewer::display()
 	m_viewer->run();
 }
 
-void cloud_viewer::get_pick_point(const line_func_3d & _line_func_3d, const point_3d & eye_point, point_3d & pick_point, float dis_threshold_with_ray)
+void cloud_viewer::set_the_target_points(std::vector<point_3d> &points)
 {
-	std::vector<float> distance_vec;
+	m_target_points = &points;
 
-	distance_points_to_line(*m_target_points, _line_func_3d, distance_vec);
-
-	float min_dis = FLT_MAX;
-
-	size_t pick_point_index = UINT64_MAX;
-
-	for (size_t i = 0; i < distance_vec.size(); ++i)
-	{
-		if (distance_vec[i] < dis_threshold_with_ray)
-		{
-			float dis_to_eye;
-
-			distance_point_to_point((*m_target_points)[i], eye_point, dis_to_eye);
-
-			if (dis_to_eye < min_dis)
-			{
-				min_dis = dis_to_eye;
-
-				pick_point_index = i;
-			}
-		}
-	}
-
-	if (pick_point_index != UINT64_MAX)
-	{
-		pick_point.set_xyz((*m_target_points)[pick_point_index].x, (*m_target_points)[pick_point_index].y, (*m_target_points)[pick_point_index].z);
-	}
-	else
-	{
-		pick_point.set_xyz(0, 0, 0);
-	}
+	m_is_set_target = true;
 }
 
-void cloud_viewer::set_the_target_points(std::vector<point_3d>* points)
+void cloud_viewer::get_picked_points(std::vector<point_3d>& picked_points)
 {
-	m_target_points = points;
+	m_selector->get_picked_points(picked_points);
+}
+
+std::vector<point_3d> * cloud_viewer::get_target_points()
+{
+	return m_target_points;
 }
 
 void cloud_viewer::points_to_geometry_node(std::vector<point_3d>& points, osg::ref_ptr<osg::Geometry> geometry, float r, float g, float b)
@@ -348,3 +290,45 @@ void PickHandler::get_ray_line_func(osg::Vec3d & world, osg::Vec3d & eye, line_f
 	_line_func_3d.set_nml(world.x() - eye.x(), world.y() - eye.y(), world.z() - eye.z());
 }
 
+bool PickHandler::calc_intersection_between_ray_and_points(const line_func_3d & _line_func_3d, const point_3d & eye_point, point_3d & pick_point, float dis_threshold_with_ray)
+{
+	std::vector<float> distance_vec;
+
+	std::vector<point_3d> & target_points = *m_cloud_viewer->get_target_points();
+
+	distance_points_to_line(target_points, _line_func_3d, distance_vec);
+
+	float min_dis = FLT_MAX;
+
+	size_t pick_point_index = UINT64_MAX;
+
+	for (size_t i = 0; i < distance_vec.size(); ++i)
+	{
+		if (distance_vec[i] < dis_threshold_with_ray)
+		{
+			float dis_to_eye;
+
+			distance_point_to_point((target_points)[i], eye_point, dis_to_eye);
+
+			if (dis_to_eye < min_dis)
+			{
+				min_dis = dis_to_eye;
+
+				pick_point_index = i;
+			}
+		}
+	}
+
+	if (pick_point_index != UINT64_MAX)
+	{
+		pick_point.set_xyz((target_points)[pick_point_index].x, (target_points)[pick_point_index].y, (target_points)[pick_point_index].z);
+
+		return true;
+	}
+	else
+	{
+		pick_point.set_xyz(0, 0, 0);
+
+		return false;
+	}
+}

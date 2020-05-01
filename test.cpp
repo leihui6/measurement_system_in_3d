@@ -97,22 +97,21 @@ int main()
 
 	m_cloud_viewer.add_point_cloud(points_1_vec);
 
-	m_cloud_viewer.set_the_target_points(&points_1_vec);
+	m_cloud_viewer.set_the_target_points(points_1_vec);
+
+	std::vector <point_3d > picked_points;
+	
+	m_cloud_viewer.get_picked_points(picked_points);
 
 	//m_cloud_viewer.add_test_points();
-
 	//Eigen::Matrix4f test_transform;
-
 	//test_transform <<
-	//	1, 0, 0, 10,
-	//	0, 1, 0, 10,
-	//	0, 0, 1, 10,
-	//	0, 0, 0, 1;
-
+	//	1.000000,0.000000,0.000000,-1.000000,
+	//	0.000000,0.866000,-0.500000,-2.000000,
+	//	0.000000,0.500000,0.866000,3.000000,
+	//	0.000000,0.000000,0.000000,1.000000;
 	//std::cout << test_transform << std::endl;
-
-	//m_cloud_viewer.add_point_cloud(points_1_vec, test_transform);
-
+	//m_cloud_viewer.add_point_cloud(points_1_vec, 4.0, test_transform);
 	//m_cloud_viewer.add_model("data/cow.osg");
 
 	m_cloud_viewer.display();

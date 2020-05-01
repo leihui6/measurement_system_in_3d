@@ -37,6 +37,36 @@ size_t kd_tree::search_neighbors_radius(float search_radius, point_3d & p, std::
 	return nMatches;
 }
 
+void kd_tree::search_points_correspondence(std::vector<point_3d>& points, kd_tree & other_kd_tree, std::vector<point_3d>& other_points)
+{
+	for (size_t i = 0; i < points.size(); ++i)
+	{
+		std::vector<size_t> ret_index;
+		std::vector<float> ret_dis;
+		other_kd_tree.search_neighbors_knn(1, points[i], ret_index, ret_dis);
+
+		if (ret_index.size() == 1)
+		{
+			other_points.push_back(get_point(ret_index.front()));
+		}
+		else if(ret_index.empty())
+		{
+			// error
+			std::cerr << __LINE__ << "search_points_correspondence()" << points[i] << " has no result in thie cloud." << std::endl;
+		}
+	}
+}
+
+void kd_tree::get_point(size_t i, point_3d & p)
+{
+	p = this->m_kd_tree_t.dataset.pts[i];
+}
+
+point_3d kd_tree::get_point(size_t i)
+{
+	return this->m_kd_tree_t.dataset.pts[i];
+}
+
 void kd_tree::points_to_poincloud(std::vector<point_3d>& points, point_cloud & m_point_cloud)
 {
 	m_point_cloud.pts = points;

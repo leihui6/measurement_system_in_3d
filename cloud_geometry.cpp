@@ -260,3 +260,8 @@ void save_points(const std::vector<point_3d>& points, const std::string & filena
 		of.close();
 	}
 }
+
+void point_cloud::load_points(std::vector<point_3d> & points)
+{
+	this->pts = points;
+}
