@@ -71,8 +71,7 @@ std::ostream & operator << (std::ostream & os, const point_3d & p)
 		<< "(x,y,z,nx,ny,nz,r,g,b)="
 		<< p.x << " " << p.y << " " << p.z << " "
 		<< p.nx << " " << p.ny << " " << p.nz << " "
-		<< p.r << " " << p.g << " " << p.b
-		<< std::endl;
+		<< p.r << " " << p.g << " " << p.b << " ";
 	return os;
 }
 
@@ -185,6 +184,56 @@ void convert_to_pointMatcher_points(std::vector<point_3d>& points, PointMatcher<
 	}
 
 	std::cout << std::endl;
+}
+
+void points_to_osg_structure(std::vector<point_3d>& points, osg::ref_ptr<osg::Vec3Array> coords, osg::ref_ptr<osg::Vec4Array> colors, osg::ref_ptr<osg::Vec3Array> normals, float r, float g, float b)
+{
+	if (r == 0 && g == 0 && b == 0)
+	{
+		for (size_t i = 0; i < points.size(); i++)
+		{
+			coords->push_back(osg::Vec3(points[i].x, points[i].y, points[i].z));
+
+			colors->push_back(osg::Vec4(points[i].r, points[i].g, points[i].b, 1.0f));
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < points.size(); i++)
+		{
+			coords->push_back(osg::Vec3(points[i].x, points[i].y, points[i].z));
+		}
+		colors->push_back(osg::Vec4(r, g, b, 1.0f));
+	}
+
+	normals->push_back(osg::Vec3(0.0f, 1.0f, 0.0f));
+}
+
+void points_to_geometry_node(std::vector<point_3d>& points, osg::ref_ptr<osg::Geometry> geometry, float r, float g, float b)
+{
+	osg::ref_ptr<osg::Vec3Array> coords = new osg::Vec3Array();
+
+	osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array();
+
+	osg::ref_ptr<osg::Vec3Array> normals = new osg::Vec3Array;
+
+	points_to_osg_structure(points, coords, colors, normals, r, g, b);
+
+	if (r == 0 && g == 0 && b == 0)
+	{
+		geometry->setColorArray(colors.get());
+		geometry->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
+	}
+	else
+	{
+		geometry->setColorArray(colors.get());
+		geometry->setColorBinding(osg::Geometry::BIND_OVERALL);
+	}
+
+	geometry->setVertexArray(coords.get());
+
+	geometry->setNormalArray(normals);
+	geometry->setNormalBinding(osg::Geometry::BIND_OVERALL);
 }
 
 void transform_points(std::vector<point_3d>& points, Eigen::Matrix4f & t, std::vector<point_3d>& ret_points)

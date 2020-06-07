@@ -26,6 +26,18 @@
 
 class cloud_viewer;
 
+struct osg_point_structure
+{
+	osg_point_structure() :
+		coords(new osg::Vec3Array()),
+		colors(new osg::Vec4Array()),
+		normals(new osg::Vec3Array()) {}
+
+	osg::ref_ptr<osg::Vec3Array> coords;
+	osg::ref_ptr<osg::Vec4Array> colors;
+	osg::ref_ptr<osg::Vec3Array> normals;
+};
+
 //! pick point on point cloud
 class PickHandler : public osgGA::GUIEventHandler
 {
@@ -54,8 +66,11 @@ private:
 	cloud_viewer * m_cloud_viewer;
 
 	std::vector<point_3d> m_picked_points;
-};
 
+	bool add_point_to_picked_vector(const point_3d & p);
+
+	bool remove_point_from_picked_vector(const point_3d & p);
+};
 
 class cloud_viewer
 {
@@ -64,12 +79,19 @@ public:
 
 	~cloud_viewer();
 
-	void add_point_cloud_with_color(std::vector<point_3d> & points, float point_size = 4,
+	// create a node by point_3d with color
+	osg::ref_ptr<osg::Geode> add_point_cloud_with_color(std::vector<point_3d> & points, float point_size = 4,
 		Eigen::Matrix4f transform = Eigen::Matrix4f::Identity(),
 		float r = 0, float g = 0, float b = 0);
 
-	void add_point_cloud(std::vector<point_3d> & points, float point_size = 4,
+	// create a node by point_3d without color
+	osg::ref_ptr<osg::Geode> add_point_cloud(std::vector<point_3d> & points, float point_size = 4,
 		Eigen::Matrix4f transform = Eigen::Matrix4f::Identity());
+
+	// update selected point cloud
+	void update_selected_point_cloud(std::vector<point_3d>& points, float r, float g, float b, float point_size);
+
+	void create_display_window(const std::string & window_name);
 
 	void add_lines(std::vector<point_3d> & points, float line_width = 3.0, float r = 0, float g = 0, float b = 0);
 
@@ -81,21 +103,18 @@ public:
 
 	void get_picked_points(std::vector<point_3d> & picked_points);
 
-	std::vector<point_3d> * get_target_points();
+	std::shared_ptr<std::vector<point_3d>> get_target_points();
 
 private:
-	osg::ref_ptr<PickHandler> m_selector;// = new PickHandler(this);
+	osg::ref_ptr<PickHandler> m_selector;
 
 	osg::ref_ptr<osg::Group> m_root;
 
+	osg::ref_ptr<osg::Geode> m_geode_selected_point_cloud;
+
 	osg::ref_ptr<osgViewer::Viewer> m_viewer;
 
-	std::vector<point_3d> * m_target_points;
-
-	bool m_is_set_target;
-
-private:
-	void points_to_geometry_node(std::vector<point_3d> & points, osg::ref_ptr<osg::Geometry> geometry, float r = 0, float g = 0, float b = 0);
+	std::shared_ptr<std::vector<point_3d>> m_target_points;
 };
 #endif // !cloud_viewer_H
 

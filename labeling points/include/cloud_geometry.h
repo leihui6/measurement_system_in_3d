@@ -1,6 +1,8 @@
 #ifndef CLOUD_POINT_H
 #define CLOUD_POINT_H
 
+#include <windows.h>
+
 // Stardard library in c++ 11 
 #include <vector>
 #include <fstream>
@@ -20,6 +22,8 @@
 
 // OSG
 #include <OSG/Vec3d>
+#include <osg/Geometry>
+#include <osg/Geode>
 
 struct point_3d
 {
@@ -130,6 +134,10 @@ void convert_to_original_points(std::vector< CGAL::Simple_cartesian<float>::Poin
 void convert_to_openGR_points(std::vector<point_3d> & points, std::vector<gr::Point3D<float>> & opengr_points);
 
 void convert_to_pointMatcher_points(std::vector<point_3d> & points, PointMatcher<float>::DataPoints & DP);
+
+void points_to_osg_structure(std::vector<point_3d>& points, osg::ref_ptr<osg::Vec3Array> coords, osg::ref_ptr<osg::Vec4Array> color, osg::ref_ptr<osg::Vec3Array> normals, float r = 0, float g = 0, float b = 0);
+
+void points_to_geometry_node(std::vector<point_3d> & points, osg::ref_ptr<osg::Geometry> geometry, float r = 0, float g = 0, float b = 0);
 
 void transform_points(std::vector<point_3d>& points, Eigen::Matrix4f & t, std::vector<point_3d>& ret_points);
 

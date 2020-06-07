@@ -1,3 +1,11 @@
+/*
+*	The purpose of this program is to load a standard 
+*	and label the points representing the shapes to be deteced.
+*
+*	Author: Leihui Li
+*	Date: 06/06/2020
+*/
+
 #include "cloud_io.h"
 #include "cloud_viewer.h"
 #include "cloud_search.h"
@@ -8,15 +16,33 @@
 //#define TEST_NORMAL
 //#define TEST_REGISTRATION
 
-int main()
+int main(int argc, char *argv[])
 {
+	if (argc < 2)
+	{
+		std::cerr << " please see help with \"--help\" "<< std::endl;
+		return -1;
+	}
+
+	std::string standard_point_cloud_filename;
+
+	standard_point_cloud_filename = std::string(argv[1]);
+
 	std::vector<point_3d> points_1_vec, points_2_vec;
 
-	load_point_cloud_txt("data/HeatShield00.txt", points_1_vec);
+	load_point_cloud_txt(standard_point_cloud_filename, points_1_vec);
+
+	cloud_viewer m_cloud_viewer("labeling points(shapes) to be detected");
+
+	m_cloud_viewer.add_point_cloud(points_1_vec, 10);
+
+	m_cloud_viewer.set_the_target_points(points_1_vec);
+
+	m_cloud_viewer.display();
 
 	//load_point_cloud_txt("data/HeatShield00_01.txt", points_2_vec);
 
-	cloud_processing m_cloud_processing;
+	//cloud_processing m_cloud_processing;
 
 #ifdef TEST_AVERAGE_SPACING
 	float average_spacing_1, average_spacing_2;
@@ -93,15 +119,15 @@ int main()
 
 	//m_kd_tree.search_neighbors_radius(10, point_3d_vec[171327], ret_matches);
 
-	cloud_viewer m_cloud_viewer("demo");
+	//cloud_viewer m_cloud_viewer("demo");
 
-	m_cloud_viewer.add_point_cloud(points_1_vec);
+	//m_cloud_viewer.add_point_cloud(points_1_vec);
 
-	m_cloud_viewer.set_the_target_points(points_1_vec);
+	//m_cloud_viewer.set_the_target_points(points_1_vec);
 
-	std::vector <point_3d > picked_points;
-	
-	m_cloud_viewer.get_picked_points(picked_points);
+	//std::vector <point_3d > picked_points;
+	//
+	//m_cloud_viewer.get_picked_points(picked_points);
 
 	//m_cloud_viewer.add_test_points();
 	//Eigen::Matrix4f test_transform;
@@ -114,7 +140,7 @@ int main()
 	//m_cloud_viewer.add_point_cloud(points_1_vec, 4.0, test_transform);
 	//m_cloud_viewer.add_model("data/cow.osg");
 
-	m_cloud_viewer.display();
+	//m_cloud_viewer.display();
 
 	return 0;
 }
