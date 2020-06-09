@@ -22,6 +22,8 @@
 #include <osgUtil/DelaunayTriangulator> 
 #include <osgGA/TrackballManipulator>
 
+#include "interface_command.h"
+#include "cloud_fitting.h"
 #include "cloud_geometry.h"
 
 class cloud_viewer;
@@ -61,6 +63,10 @@ private:
 
 	bool calc_intersection_between_ray_and_points(const line_func_3d & _line_func_3d, const point_3d & eye_point, point_3d & pick_point, float dis_threshold_with_ray);
 
+	void update_shapes();
+
+	void process_line();
+
 private:
 	
 	cloud_viewer * m_cloud_viewer;
@@ -93,28 +99,43 @@ public:
 
 	void create_display_window(const std::string & window_name);
 
-	void add_lines(std::vector<point_3d> & points, float line_width = 3.0, float r = 0, float g = 0, float b = 0);
+	//void add_lines(std::vector<point_3d> & points, float line_width = 3.0, float r = 0, float g = 0, float b = 0);
+	
+	void update_line(line_func_3d & line_func, point_3d & line_segment_begin, point_3d & line_segment_end, float r = 255, float g = 255, float b = 255, float line_width = 4);
 
 	void add_model(const std::string & filename);
 
 	void display();
 
-	void set_the_target_points(std::vector<point_3d> &points);
+	void set_the_target_points(std::vector<point_3d> & points);
+
+	void set_the_interface_command(interface_command * ic_ptr);
 
 	void get_picked_points(std::vector<point_3d> & picked_points);
 
 	std::shared_ptr<std::vector<point_3d>> get_target_points();
+
+public:
+
+	// interface command pointer, TODO: to be shared pointer
+	interface_command * m_ic_ptr;
+
+	cloud_fitting m_cf;
 
 private:
 	osg::ref_ptr<PickHandler> m_selector;
 
 	osg::ref_ptr<osg::Group> m_root;
 
+	// only one geometry, which used to show selected points, hooked on this geode, 
 	osg::ref_ptr<osg::Geode> m_geode_selected_point_cloud;
+
+	// only one geometry, which used to show fitted line points, hooked on this geode.
+	osg::ref_ptr<osg::Geode> m_geode_fitted_line;
 
 	osg::ref_ptr<osgViewer::Viewer> m_viewer;
 
-	std::shared_ptr<std::vector<point_3d>> m_target_points;
+	std::shared_ptr<std::vector<point_3d>> m_target_points_ptr;
 };
 #endif // !cloud_viewer_H
 

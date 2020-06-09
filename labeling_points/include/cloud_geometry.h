@@ -139,6 +139,18 @@ void points_to_osg_structure(std::vector<point_3d>& points, osg::ref_ptr<osg::Ve
 
 void points_to_geometry_node(std::vector<point_3d> & points, osg::ref_ptr<osg::Geometry> geometry, float r = 0, float g = 0, float b = 0);
 
+// get minimal point and maximal point in a specific point set
+void max_min_point_3d_vec(std::vector<point_3d> & points, point_3d & min_p, point_3d & max_p);
+
+// get minimal value and maximal value in a specific array
+void max_min_value_array(std::vector<float> vec, float & min_value, float & max_value);
+
+// calculate the min and max t in line function, min_max_t[0-2]: min_t; min_max[3-5]:max_t
+void man_min_t_line_function(line_func_3d & line_func, point_3d & min_p, point_3d & max_p, std::vector<float>& min_t, std::vector<float> &max_t);
+
+// calculate the appropriate t that could let point be closer to target point
+void get_appropriate_t(line_func_3d & line_func, std::vector<float> t_vec, point_3d target_point, float & real_t);
+
 void transform_points(std::vector<point_3d>& points, Eigen::Matrix4f & t, std::vector<point_3d>& ret_points);
 
 void pedalpoint_point_to_line(const point_3d & point, const line_func_3d & _line_func_3d, point_3d & pedalpoint);

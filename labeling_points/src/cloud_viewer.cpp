@@ -29,28 +29,29 @@ bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapt
 		break;
 	}
 
+	// do nothing 
 	if (pick_status == 0)
 	{
 		return false;
 	}
 
 	//std::cout << "user's input type is:" << status << std::endl;
-
+	
 	osg::ref_ptr< osgViewer::View> viewer = dynamic_cast<osgViewer::View*>(&aa);
 
 	if (viewer)
 	{
-		// 
+		point_3d pp; // picked point
+
+		bool is_clicked = get_picked_point(viewer, ea.getX(), ea.getY(), pp);
+
+		std::cout << "picked point=" << pp << std::endl;
+
+		// picking operation
 		if (pick_status == 1)
 		{
-			point_3d pp; // picked point
-
-			bool is_clicked = get_picked_point(viewer, ea.getX(), ea.getY(), pp);
-
 			if (is_clicked)
 			{
-				std::cout << "picked point=" << pp << std::endl;
-				
 				if (add_point_to_picked_vector(pp))
 				{
 					std::cout << "added done" << std::endl;
@@ -61,16 +62,11 @@ bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapt
 				std::cout << "No points clicked can be collected, please be closer to the point" << std::endl;
 			}
 		}
+		// removing operation
 		else if (pick_status == 2)
 		{
-			// picked point
-			point_3d pp;
-
-			bool is_clicked = get_picked_point(viewer, ea.getX(), ea.getY(), pp);
-
 			if (is_clicked)
 			{
-				std::cout << "picked point=" << pp << std::endl;
 				if (remove_point_from_picked_vector(pp))
 				{
 					std::cout << "removed done" << std::endl;
@@ -82,6 +78,9 @@ bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapt
 			}
 		}
 
+		update_shapes();
+		
+		// update: showing on screen in real time
 		m_cloud_viewer->update_selected_point_cloud(m_picked_points, 255, 255, 255, 20);
 
 		std::cout << "The size of selected points=" << m_picked_points.size() << std::endl;
@@ -116,7 +115,8 @@ bool PickHandler::get_picked_point(osg::ref_ptr< osgViewer::View> viewer, float 
 cloud_viewer::cloud_viewer(const std::string & window_name)
 	: m_root(new osg::Group),
 	m_viewer(new osgViewer::Viewer),
-	m_target_points(nullptr)
+	m_target_points_ptr(nullptr),
+	m_ic_ptr(nullptr)
 {
 	// create a display window and initialize the camera 
 	create_display_window(window_name);
@@ -125,13 +125,17 @@ cloud_viewer::cloud_viewer(const std::string & window_name)
 	m_selector = new PickHandler(this);
 
 	// add a empty selected set, it will be replaced after selecting operation
-	std::vector<point_3d> selected_point_cloud;
-	m_geode_selected_point_cloud = add_point_cloud(selected_point_cloud);
+	std::vector<point_3d> empty_point_cloud;
+	m_geode_selected_point_cloud = add_point_cloud(empty_point_cloud);
+
+	// add a empty fitted line points
+	m_geode_fitted_line = add_point_cloud(empty_point_cloud);
+
 }
 
 cloud_viewer::~cloud_viewer()
 {
-
+	// TODO: manage pointer in case of leaking of memory
 }
 
 osg::ref_ptr<osg::Geode> cloud_viewer::add_point_cloud_with_color(std::vector<point_3d> & points, float point_size, Eigen::Matrix4f t, float r, float g, float b)
@@ -245,23 +249,101 @@ void cloud_viewer::create_display_window(const std::string & window_name)
 	camera->setCullingMode(cullingMode);
 }
 
-void cloud_viewer::add_lines(std::vector<point_3d>& points, float line_width, float r,float g,float b)
+//void cloud_viewer::add_lines(std::vector<point_3d>& points, float line_width, float r,float g,float b)
+//{
+//	osg::ref_ptr<osg::Geode> geode = new osg::Geode();
+//
+//	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+//
+//	points_to_geometry_node(points, geometry, r, g, b);
+//
+//	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES, 0, points.size()));
+//
+//	osg::ref_ptr<osg::LineWidth> lw = new osg::LineWidth(line_width);
+//	
+//	geometry->getOrCreateStateSet()->setAttribute(lw, osg::StateAttribute::ON);
+//
+//	geode->addDrawable(geometry);
+//
+//	m_root->addChild(geode.get());
+//}
+
+void cloud_viewer::update_line(line_func_3d & line_func, point_3d & line_segment_begin, point_3d & line_segment_end, float r, float g, float b, float line_width)
 {
-	osg::ref_ptr<osg::Geode> geode = new osg::Geode();
+	/*
 
-	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+	The purpose of this code is to show a line with a known line function within a segment represented by begin and end point.
 
-	points_to_geometry_node(points, geometry, r, g, b);
+	line_segment_begin should be the minimal point
+	line_segment_end should be the maximal point
 
-	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES, 0, points.size()));
+	1) let (x0,y0.z0) in "line_func_3d" be the middle point among line_segment_begin and line_segment_end
+	2) update (x0,y0.z0)
+	3) calculate the "t" representing real begin and end point
+	4) draw a line from real begin point to real end point
+	*/
 
-	osg::ref_ptr<osg::LineWidth> lw = new osg::LineWidth(line_width);
+	std::vector<float>t_b, t_e;
+
+	man_min_t_line_function(line_func, line_segment_begin, line_segment_end, t_b, t_e);
+
+	float
+		min_value_t_b = 0, max_value_t_b = 0,
+		min_value_t_e = 0, max_value_t_e = 0;
+
+	max_min_value_array(t_b, min_value_t_b, max_value_t_b);
+
+	max_min_value_array(t_e, min_value_t_e, max_value_t_e);
+
+	// adjust the (x0,y0,z0) in line function
+	bool adjusted = false;
+	for (float adjust_t = min_value_t_b; adjust_t < max_value_t_e; adjust_t += 0.01)
+	{
+		float
+			tmp_x = line_func.x + adjust_t * line_func.n,
+			tmp_y = line_func.y + adjust_t * line_func.m,
+			tmp_z = line_func.z + adjust_t * line_func.l;
+
+		if (
+			tmp_x < line_segment_end.x && tmp_x > line_segment_begin.x &&
+			tmp_y < line_segment_end.y && tmp_y > line_segment_begin.y &&
+			tmp_z < line_segment_end.z && tmp_z > line_segment_begin.z)
+		{
+			line_func.set_xyz(tmp_x, tmp_y, tmp_z);
+
+			// update t that could let (x0,y0.z0) be middle again
+			man_min_t_line_function(line_func, line_segment_begin, line_segment_end, t_b, t_e);
+
+			adjusted = true;
+		}
+	}
+	if (adjusted == false)
+	{
+		std::cerr << "[ERROR] fitting line error" << std::endl;
+
+		return;
+	}
+
+	// for drawing a real line on screen
+	std::vector<point_3d> real_line_segment(2);
 	
+	// get the t that could let real begin point be closer to begin point of segment 
+	float real_t_b = 0, real_t_e = 0;
+	get_appropriate_t(line_func, t_b, line_segment_begin, real_t_b);
+
+	get_appropriate_t(line_func, t_e, line_segment_end, real_t_e);
+
+	real_line_segment[0].set_xyz(line_func.x + line_func.n * real_t_b, line_func.y + line_func.m * real_t_b, line_func.z + line_func.l * real_t_b);
+
+	real_line_segment[1].set_xyz(line_func.x + line_func.n * real_t_e, line_func.y + line_func.m * real_t_e, line_func.z + line_func.l * real_t_e);
+
+	// update a line node
+	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+	points_to_geometry_node(real_line_segment, geometry, r, g, b);
+	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES, 0, real_line_segment.size()));
+	osg::ref_ptr<osg::LineWidth> lw = new osg::LineWidth(line_width);
 	geometry->getOrCreateStateSet()->setAttribute(lw, osg::StateAttribute::ON);
-
-	geode->addDrawable(geometry);
-
-	m_root->addChild(geode.get());
+	m_geode_fitted_line->setChild(0, geometry);
 }
 
 void cloud_viewer::add_model(const std::string & filename)
@@ -289,15 +371,20 @@ void cloud_viewer::display()
 
 	osgUtil::Optimizer optimizer;
 	optimizer.optimize(m_root.get());
-	
+
 	//m_viewer->realize();
-	
+
 	m_viewer->run();
 }
 
 void cloud_viewer::set_the_target_points(std::vector<point_3d> &points)
 {
-	m_target_points = std::make_shared< std::vector<point_3d>>(points);
+	m_target_points_ptr = std::make_shared< std::vector<point_3d>>(points);
+}
+
+void cloud_viewer::set_the_interface_command(interface_command * ic_ptr)
+{
+	m_ic_ptr = ic_ptr;
 }
 
 void cloud_viewer::get_picked_points(std::vector<point_3d>& picked_points)
@@ -307,7 +394,7 @@ void cloud_viewer::get_picked_points(std::vector<point_3d>& picked_points)
 
 std::shared_ptr<std::vector<point_3d>> cloud_viewer::get_target_points()
 {
-	return m_target_points;
+	return m_target_points_ptr;
 }
 
 void PickHandler::screen_to_world(osg::ref_ptr<osgViewer::View> viewer, osg::Vec3d & screen_point, osg::Vec3d & world)
@@ -383,6 +470,64 @@ bool PickHandler::calc_intersection_between_ray_and_points(const line_func_3d & 
 
 		return false;
 	}
+}
+
+void PickHandler::update_shapes()
+{
+	if (this->m_cloud_viewer->m_ic_ptr->dt == DT_LINE)
+	{
+		std::cout << "updating the line model ... " << std::endl;
+
+		process_line();
+		
+		std::cout << "line model updated done " << std::endl;
+	}
+	else if (this->m_cloud_viewer->m_ic_ptr->dt == DT_PLANE)
+	{
+		std::cout << "updating the plane model ... " << std::endl;
+
+		//process_plane();
+
+		std::cout << "plane model updated done " << std::endl;
+	}
+	else if (this->m_cloud_viewer->m_ic_ptr->dt == DT_CYLINDER)
+	{
+		std::cout << "updating the cylinder model ... " << std::endl;
+
+		//process_cylinder();
+
+		std::cout << "cylinder model updated done " << std::endl;
+	}
+	else
+	{
+		// nothing
+	}
+
+}
+
+void PickHandler::process_line()
+{
+	if (m_picked_points.size() == 1)
+	{
+		return;
+	}
+
+	point_3d min_p, max_p;
+
+	max_min_point_3d_vec(m_picked_points, min_p, max_p);
+
+	line_func_3d lind_func;
+
+	m_cloud_viewer->m_cf.fitting_line_3d_linear_least_squares(m_picked_points, lind_func);
+
+	//std::cout << "max_p:" << max_p << std::endl << "min_p:" << min_p << std::endl;
+
+	//std::cout
+	//	<< lind_func.x << " " << lind_func.y << " " << lind_func.z << " "
+	//	<< lind_func.n << " " << lind_func.m << " " << lind_func.l << std::endl;
+
+	m_cloud_viewer->update_line(lind_func, min_p, max_p);
+
 }
 
 bool PickHandler::add_point_to_picked_vector(const point_3d & p)

@@ -15,5 +15,7 @@ public:
 	~cloud_fitting();
 
 	void fitting_line_3d_linear_least_squares(std::vector<point_3d>& points, line_func_3d & line_func);
+
+
 };
 

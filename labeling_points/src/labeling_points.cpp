@@ -12,6 +12,7 @@
 #include "cloud_fitting.h"
 #include "cloud_registration.h"
 #include "cloud_processing.h"
+#include "interface_command.h"
 
 //#define TEST_NORMAL
 //#define TEST_REGISTRATION
@@ -23,6 +24,10 @@ int main(int argc, char *argv[])
 		std::cerr << " please see help with \"--help\" "<< std::endl;
 		return -1;
 	}
+
+	interface_command ic;
+
+	ic.run();
 
 	std::string standard_point_cloud_filename;
 
@@ -37,6 +42,8 @@ int main(int argc, char *argv[])
 	m_cloud_viewer.add_point_cloud(points_1_vec, 10);
 
 	m_cloud_viewer.set_the_target_points(points_1_vec);
+
+	m_cloud_viewer.set_the_interface_command(&ic);
 
 	m_cloud_viewer.display();
 

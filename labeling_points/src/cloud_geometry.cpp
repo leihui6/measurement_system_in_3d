@@ -236,6 +236,110 @@ void points_to_geometry_node(std::vector<point_3d>& points, osg::ref_ptr<osg::Ge
 	geometry->setNormalBinding(osg::Geometry::BIND_OVERALL);
 }
 
+void max_min_point_3d_vec(std::vector<point_3d>& points, point_3d & min_p, point_3d & max_p)
+{
+	if (points.empty())
+	{
+		return ;
+	}
+
+	// [0]:x [1]:y [2]:z
+	std::vector<float>
+		min_xyz({ points[0].x, points[1].y, points[2].z }),
+
+		max_xyz({ points[0].x, points[1].y, points[2].z });
+
+	//std::cout << min_xyz[0] << " " << min_xyz[1] << " " << min_xyz[2] << std::endl;
+
+	for (size_t i = 0; i < points.size(); ++i)
+	{
+		point_3d & p = points[i];
+
+		if (p.x > max_xyz[0])
+		{
+			max_xyz[0] = p.x;
+		}
+		if (p.x < min_xyz[0])
+		{
+			min_xyz[0] = p.x;
+		}
+
+		if (p.y > max_xyz[1])
+		{
+			max_xyz[1] = p.y;
+		}
+		if (p.y < min_xyz[1])
+		{
+			min_xyz[1] = p.y;
+		}
+
+		if (p.z > max_xyz[2])
+		{
+			max_xyz[2] = p.z;
+		}
+		if (p.z < min_xyz[2])
+		{
+			min_xyz[2] = p.z;
+		}
+	}
+
+	min_p.set_xyz(min_xyz[0], min_xyz[1], min_xyz[2]);
+
+	max_p.set_xyz(max_xyz[0], max_xyz[1], max_xyz[2]);
+}
+
+void max_min_value_array(std::vector<float> vec, float & min_value, float & max_value)
+{
+	auto min_max = std::minmax_element(vec.begin(), vec.end());
+
+	min_value = *min_max.first;
+
+	max_value = *min_max.second;
+}
+
+void man_min_t_line_function(line_func_3d & line_func, point_3d & min_p, point_3d & max_p, std::vector<float> &min_t, std::vector<float> &max_t)
+{
+	min_t.resize(3, 0);
+
+	max_t.resize(3, 0);
+
+	min_t[0] = (min_p.x - line_func.x) / line_func.n;
+
+	min_t[1] = (min_p.y - line_func.y) / line_func.m;
+
+	min_t[2] = (min_p.z - line_func.z) / line_func.l;
+
+	max_t[0] = (max_p.x - line_func.x) / line_func.n;
+
+	max_t[1] = (max_p.y - line_func.y) / line_func.m;
+
+	max_t[2] = (max_p.z - line_func.z) / line_func.l;
+}
+void get_appropriate_t(line_func_3d & line_func, std::vector<float> t_vec, point_3d target_point, float & real_t)
+{
+	float min_dis = FLT_MAX;
+
+	for (size_t i = 0; i < t_vec.size(); ++i)
+	{
+		point_3d tmp_p;
+
+		tmp_p.set_xyz(
+			line_func.x + t_vec[i] * line_func.n,
+			line_func.y + t_vec[i] * line_func.m, 
+			line_func.z + t_vec[i] * line_func.l);
+
+		float dis = 0.0;
+
+		distance_point_to_point(tmp_p, target_point, dis);
+
+		if (dis < min_dis)
+		{
+			min_dis = dis;
+
+			real_t = t_vec[i];
+		}
+	}
+}
 void transform_points(std::vector<point_3d>& points, Eigen::Matrix4f & t, std::vector<point_3d>& ret_points)
 {
 	ret_points.resize(points.size());
