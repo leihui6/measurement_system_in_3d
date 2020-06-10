@@ -96,10 +96,18 @@ void line_func_3d::set_nml(float n, float m, float l)
 	this->l = l;
 }
 
-plane_func::plane_func()
+plane_func_3d::plane_func_3d()
 	: a(0), b(0), c(0), d(0)
 {
 
+}
+
+void plane_func_3d::set_abcd(float a, float b, float c, float d)
+{
+	this->a = a;
+	this->b = b;
+	this->c = c;
+	this->d = d;
 }
 
 cylinder_func::cylinder_func()
@@ -188,6 +196,7 @@ void convert_to_pointMatcher_points(std::vector<point_3d>& points, PointMatcher<
 
 void points_to_osg_structure(std::vector<point_3d>& points, osg::ref_ptr<osg::Vec3Array> coords, osg::ref_ptr<osg::Vec4Array> colors, osg::ref_ptr<osg::Vec3Array> normals, float r, float g, float b)
 {
+	// use point's color 
 	if (r == 0 && g == 0 && b == 0)
 	{
 		for (size_t i = 0; i < points.size(); i++)
@@ -197,6 +206,7 @@ void points_to_osg_structure(std::vector<point_3d>& points, osg::ref_ptr<osg::Ve
 			colors->push_back(osg::Vec4(points[i].r, points[i].g, points[i].b, 1.0f));
 		}
 	}
+	// use specific color
 	else
 	{
 		for (size_t i = 0; i < points.size(); i++)
@@ -219,6 +229,7 @@ void points_to_geometry_node(std::vector<point_3d>& points, osg::ref_ptr<osg::Ge
 
 	points_to_osg_structure(points, coords, colors, normals, r, g, b);
 
+	// use color of each point
 	if (r == 0 && g == 0 && b == 0)
 	{
 		geometry->setColorArray(colors.get());
@@ -288,7 +299,7 @@ void max_min_point_3d_vec(std::vector<point_3d>& points, point_3d & min_p, point
 	max_p.set_xyz(max_xyz[0], max_xyz[1], max_xyz[2]);
 }
 
-void max_min_value_array(std::vector<float> vec, float & min_value, float & max_value)
+void max_min_value_array(std::vector<float> & vec, float & min_value, float & max_value)
 {
 	auto min_max = std::minmax_element(vec.begin(), vec.end());
 
@@ -368,6 +379,17 @@ void pedalpoint_point_to_line(const point_3d & point, const line_func_3d & _line
 	pedalpoint.z = (l * l * z1 + m * m * z0 + n * n * z0 - l * m*y0 - l * n*x0 + l * m*y1 + l * n*x1) / (l *l + m * m + n * n);
 }
 
+void pedalpoint_point_to_plane(const point_3d & point, const plane_func_3d & plane_func, point_3d & pedalpoint)
+{
+	float
+		t = (point.x * plane_func.a + point.y * plane_func.b + point.z * plane_func.c + plane_func.d)
+		/ (plane_func.a*plane_func.a + plane_func.b*plane_func.b + plane_func.c*plane_func.c);
+
+	pedalpoint.x = point.x - plane_func.a * t;
+	pedalpoint.y = point.y - plane_func.b * t;
+	pedalpoint.z = point.z - plane_func.c * t;
+}
+
 void distance_points_to_line(const std::vector<point_3d>& points, const line_func_3d & _line_func_3d, std::vector<float>& points_dis_vec)
 {
 	points_dis_vec.resize(points.size());
@@ -412,6 +434,127 @@ void save_points(const std::vector<point_3d>& points, const std::string & filena
 
 		of.close();
 	}
+}
+
+void make_points_ordered_by_distance(std::vector<point_3d>& points, std::vector<point_3d>& ordered_points)
+{
+	if (points.empty())
+	{
+		return;
+	}
+
+	std::vector<bool> visited(points.size(), false);
+
+	ordered_points.push_back(points[0]);
+
+	visited[0] = true;
+
+	for (size_t i = 0; i < ordered_points.size(); ++i)
+	{
+		float min_dis = FLT_MAX;
+
+		int min_dis_i = -1;
+
+		for (size_t j = 0; j < points.size(); ++j)
+		{
+			if (visited[j] == false)
+			{
+				float dis = 0.0;
+
+				distance_point_to_point(ordered_points[i], points[j], dis);
+
+				if (dis < min_dis)
+				{
+					min_dis_i = j;
+
+					min_dis = dis;
+				}
+			}
+		}
+
+		if (min_dis_i != -1)
+		{
+			visited[min_dis_i] = true;
+
+			ordered_points.push_back(points[min_dis_i]);
+		}
+	}
+
+	//for (size_t i = 0; i < ordered_points.size() - 1; i++)
+	//{
+	//	float dis = 0.0;
+
+	//	distance_point_to_point(ordered_points[i], ordered_points[i + 1], dis);
+
+	//	std::cout << dis << " ";
+	//}
+	//std::cout << std::endl;
+}
+
+void point_along_with_vector_within_dis(point_3d & point, Eigen::Vector3f & line_dir, point_3d & result_p1, point_3d & result_p2, float distance)
+{
+	if (distance == 0)
+	{
+		result_p1 = point;
+
+		result_p2 = point;
+		return;
+	}
+	float m, n, l;
+	m = line_dir[0];
+	n = line_dir[1];
+	l = line_dir[2];
+
+	float
+		M = sqrt((distance*distance*m*m) / (m*m + n * n + l * l)),
+		N = sqrt((distance*distance*n*n) / (m*m + n * n + l * l)),
+		L = sqrt((distance*distance*l*l) / (m*m + n * n + l * l));
+
+	float x[2], y[2], z[2];
+
+	x[0] = point.x + M;
+	x[1] = point.x - M;
+	y[0] = point.y + N;
+	y[1] = point.y - N;
+	z[0] = point.z + L;
+	z[1] = point.z - L;
+
+	Eigen::Vector3f v;
+
+	std::vector<point_3d> tmp_p;
+
+	//! 筛选出两个平行于方向向量的点
+	for (size_t i = 0; i < 2; i++)
+	{
+		for (size_t j = 0; j < 2; j++)
+		{
+			for (size_t k = 0; k < 2; k++)
+			{
+				v[0] = x[i] - point.x;
+				v[1] = y[j] - point.y;
+				v[2] = z[k] - point.z;
+				if (is_parallel_vector(line_dir, v))
+				{
+					tmp_p.push_back(point_3d(x[i], y[j], z[k]));
+				}							 
+			}								 
+		}
+	}
+	if (tmp_p.size() > 1)
+	{
+		result_p1 = tmp_p[0];
+		result_p2 = tmp_p[1];
+	}
+}
+
+bool is_parallel_vector(const Eigen::Vector3f & v1, const Eigen::Vector3f & v2)
+{
+	//std::cout << v1.cross(v2).norm() << std::endl;
+	if (v1.cross(v2).norm() < 0.01)
+	{
+		return true;
+	}
+	return false;
 }
 
 void point_cloud::load_points(std::vector<point_3d> & points)

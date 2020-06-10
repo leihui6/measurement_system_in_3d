@@ -6,10 +6,11 @@ This is my final project in master's degree, that is *Automatic Industrial Measu
 
 The work flow of this system was shown as following. All steps will be implemented in C++ and run on console using command(Windows or Linux) considering this is a huge project and I don't have too much time:
 
-- [Labeling a set of points representing the shape to be detected](./labeling_points)
-- Rough registration
-- Fine registration
-- Searching the points to be measured in specified point cloud
+- [ ] [Labeling a set of points representing the shape to be detected](./labeling_points)
+- [ ] Rough registration
+- [ ] Fine registration
+- [ ] Searching the points to be measured in specified point cloud
+- [ ] Make it across-platform including `Windows (windows 10)` and `Linux(Ubuntu *)`
 
 ## Compiler
 
@@ -25,7 +26,7 @@ Every step should has its dependencies libraries, also might require the whole l
   - for visulization of point cloud
 - nanoflann [link](https://github.com/jlblancoc/nanoflann)
   - for searching in point cloud
-- CGAL(The Computational Geometry Algorithms Library) [link](https://www.cgal.org/)
+- CGAL 5.0.2 (The Computational Geometry Algorithms Library) [link](https://www.cgal.org/)
   - for associating with core geometric calculation
 - OpenGR(A C++ library for 3D Global Registration) [link](https://github.com/STORM-IRIT/OpenGR)
   - for coarsing registration bwtween two arbitrarily located and arbitrarily oriented point clouds.

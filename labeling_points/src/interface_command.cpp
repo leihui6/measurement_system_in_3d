@@ -32,6 +32,7 @@ void interface_command::run_itself()
 
 		if (i_c == 'q')
 		{
+			// quit selecting model
 			if (cs == CS_SELECTING_POINTS)
 			{
 				std::cout << "Exit manually selecting step" << std::endl;
@@ -42,9 +43,10 @@ void interface_command::run_itself()
 
 				continue;
 			}
+			// quit command interface
 			else
 			{
-				std::cout << "Exit manually console" << std::endl;
+				std::cout << "exit manually console" << std::endl;
 
 				cs = CS_QUIT;
 

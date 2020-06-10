@@ -78,6 +78,7 @@ bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapt
 			}
 		}
 
+		// update shapes by user's option
 		update_shapes();
 		
 		// update: showing on screen in real time
@@ -131,6 +132,11 @@ cloud_viewer::cloud_viewer(const std::string & window_name)
 	// add a empty fitted line points
 	m_geode_fitted_line = add_point_cloud(empty_point_cloud);
 
+	// add a empty fitted plane points
+	m_geode_fitted_plane = add_point_cloud(empty_point_cloud);
+
+	// add a empty testing points
+	m_geode_testing = add_point_cloud(empty_point_cloud);
 }
 
 cloud_viewer::~cloud_viewer()
@@ -222,6 +228,22 @@ void cloud_viewer::update_selected_point_cloud(std::vector<point_3d>& points, fl
 	m_geode_selected_point_cloud->setChild(0, geometry);
 }
 
+void cloud_viewer::update_testing_point_cloud(std::vector<point_3d>& points, float r, float g, float b, float point_size)
+{
+	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+
+	points_to_geometry_node(points, geometry, r, g, b);
+
+	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS, 0, points.size()));
+
+	osg::StateSet* stateSet = geometry->getOrCreateStateSet();
+	osg::Point* state_point_size = new osg::Point;
+	state_point_size->setSize(point_size);
+	stateSet->setAttribute(state_point_size);
+
+	m_geode_testing->setChild(0, geometry);
+}
+
 void cloud_viewer::create_display_window(const std::string & window_name)
 {
 	m_viewer->setCameraManipulator(new osgGA::TrackballManipulator);
@@ -268,82 +290,34 @@ void cloud_viewer::create_display_window(const std::string & window_name)
 //	m_root->addChild(geode.get());
 //}
 
-void cloud_viewer::update_line(line_func_3d & line_func, point_3d & line_segment_begin, point_3d & line_segment_end, float r, float g, float b, float line_width)
+void cloud_viewer::update_line(std::vector<point_3d> & line_segment, float r, float g, float b, float line_width)
 {
-	/*
-
-	The purpose of this code is to show a line with a known line function within a segment represented by begin and end point.
-
-	line_segment_begin should be the minimal point
-	line_segment_end should be the maximal point
-
-	1) let (x0,y0.z0) in "line_func_3d" be the middle point among line_segment_begin and line_segment_end
-	2) update (x0,y0.z0)
-	3) calculate the "t" representing real begin and end point
-	4) draw a line from real begin point to real end point
-	*/
-
-	std::vector<float>t_b, t_e;
-
-	man_min_t_line_function(line_func, line_segment_begin, line_segment_end, t_b, t_e);
-
-	float
-		min_value_t_b = 0, max_value_t_b = 0,
-		min_value_t_e = 0, max_value_t_e = 0;
-
-	max_min_value_array(t_b, min_value_t_b, max_value_t_b);
-
-	max_min_value_array(t_e, min_value_t_e, max_value_t_e);
-
-	// adjust the (x0,y0,z0) in line function
-	bool adjusted = false;
-	for (float adjust_t = min_value_t_b; adjust_t < max_value_t_e; adjust_t += 0.01)
-	{
-		float
-			tmp_x = line_func.x + adjust_t * line_func.n,
-			tmp_y = line_func.y + adjust_t * line_func.m,
-			tmp_z = line_func.z + adjust_t * line_func.l;
-
-		if (
-			tmp_x < line_segment_end.x && tmp_x > line_segment_begin.x &&
-			tmp_y < line_segment_end.y && tmp_y > line_segment_begin.y &&
-			tmp_z < line_segment_end.z && tmp_z > line_segment_begin.z)
-		{
-			line_func.set_xyz(tmp_x, tmp_y, tmp_z);
-
-			// update t that could let (x0,y0.z0) be middle again
-			man_min_t_line_function(line_func, line_segment_begin, line_segment_end, t_b, t_e);
-
-			adjusted = true;
-		}
-	}
-	if (adjusted == false)
-	{
-		std::cerr << "[ERROR] fitting line error" << std::endl;
-
-		return;
-	}
-
-	// for drawing a real line on screen
-	std::vector<point_3d> real_line_segment(2);
-	
-	// get the t that could let real begin point be closer to begin point of segment 
-	float real_t_b = 0, real_t_e = 0;
-	get_appropriate_t(line_func, t_b, line_segment_begin, real_t_b);
-
-	get_appropriate_t(line_func, t_e, line_segment_end, real_t_e);
-
-	real_line_segment[0].set_xyz(line_func.x + line_func.n * real_t_b, line_func.y + line_func.m * real_t_b, line_func.z + line_func.l * real_t_b);
-
-	real_line_segment[1].set_xyz(line_func.x + line_func.n * real_t_e, line_func.y + line_func.m * real_t_e, line_func.z + line_func.l * real_t_e);
-
-	// update a line node
 	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
-	points_to_geometry_node(real_line_segment, geometry, r, g, b);
-	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES, 0, real_line_segment.size()));
+
+	points_to_geometry_node(line_segment, geometry, r, g, b);
+	
+	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES, 0, line_segment.size()));
+	
 	osg::ref_ptr<osg::LineWidth> lw = new osg::LineWidth(line_width);
+	
 	geometry->getOrCreateStateSet()->setAttribute(lw, osg::StateAttribute::ON);
+	
 	m_geode_fitted_line->setChild(0, geometry);
+}
+
+void cloud_viewer::update_plane(std::vector<point_3d> & plane_hull,float r, float g, float b)
+{
+	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+
+	points_to_geometry_node(plane_hull, geometry, r, g, b);
+
+	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::QUADS, 0, plane_hull.size()));
+
+	//osg::ref_ptr<osg::LineWidth> lw = new osg::LineWidth(line_width);
+
+	//geometry->getOrCreateStateSet()->setAttribute(lw, osg::StateAttribute::ON);
+
+	m_geode_fitted_plane->setChild(0, geometry);
 }
 
 void cloud_viewer::add_model(const std::string & filename)
@@ -486,7 +460,7 @@ void PickHandler::update_shapes()
 	{
 		std::cout << "updating the plane model ... " << std::endl;
 
-		//process_plane();
+		process_plane();
 
 		std::cout << "plane model updated done " << std::endl;
 	}
@@ -494,7 +468,7 @@ void PickHandler::update_shapes()
 	{
 		std::cout << "updating the cylinder model ... " << std::endl;
 
-		//process_cylinder();
+		process_cylinder();
 
 		std::cout << "cylinder model updated done " << std::endl;
 	}
@@ -507,27 +481,143 @@ void PickHandler::update_shapes()
 
 void PickHandler::process_line()
 {
-	if (m_picked_points.size() == 1)
+	/*
+	The purpose of this code is to show a line with a known line function within a segment represented by begin and end point.
+
+	line_segment_begin should be the minimal point
+	line_segment_end should be the maximal point
+
+	1) let (x0,y0.z0) in "line_func_3d" be the middle point among line_segment_begin and line_segment_end
+	2) update (x0,y0.z0)
+	3) calculate the "t" representing real begin and end point
+	4) draw a line from real begin point to real end point
+	*/
+	if (m_picked_points.size() < 2)
 	{
 		return;
 	}
+	
+	line_func_3d line_func;
+
+	m_cloud_viewer->m_cf.fitting_line_3d_linear_least_squares(m_picked_points, line_func);
+	
+	point_3d min_p, max_p;
+
+	max_min_point_3d_vec(m_picked_points, min_p, max_p);
+
+	std::vector<float>t_b, t_e;
+
+	man_min_t_line_function(line_func, min_p, max_p, t_b, t_e);
+
+	float
+		min_value_t_b = 0, max_value_t_b = 0,
+		min_value_t_e = 0, max_value_t_e = 0;
+
+	max_min_value_array(t_b, min_value_t_b, max_value_t_b);
+
+	max_min_value_array(t_e, min_value_t_e, max_value_t_e);
+
+	// adjust the (x0,y0,z0) in line function
+	bool adjusted = false;
+	for (float adjust_t = min_value_t_b; adjust_t < max_value_t_e; adjust_t += 0.01)
+	{
+		float
+			tmp_x = line_func.x + adjust_t * line_func.n,
+			tmp_y = line_func.y + adjust_t * line_func.m,
+			tmp_z = line_func.z + adjust_t * line_func.l;
+
+		if (
+			tmp_x < max_p.x && tmp_x > min_p.x &&
+			tmp_y < max_p.y && tmp_y > min_p.y &&
+			tmp_z < max_p.z && tmp_z > min_p.z)
+		{
+			line_func.set_xyz(tmp_x, tmp_y, tmp_z);
+
+			// update t that could let (x0,y0.z0) be middle again
+			man_min_t_line_function(line_func, min_p, max_p, t_b, t_e);
+
+			adjusted = true;
+		}
+	}
+	if (adjusted == false)
+	{
+		std::cerr << "[ERROR] fitting line error" << std::endl;
+
+		return;
+	}
+
+	// for drawing a real line on screen
+	std::vector<point_3d> real_line_segment(2);
+
+	// get the t that could let real begin point be closer to begin point of segment 
+	float real_t_b = 0, real_t_e = 0;
+	get_appropriate_t(line_func, t_b, min_p, real_t_b);
+
+	get_appropriate_t(line_func, t_e, max_p, real_t_e);
+
+	real_line_segment[0].set_xyz(line_func.x + line_func.n * real_t_b, line_func.y + line_func.m * real_t_b, line_func.z + line_func.l * real_t_b);
+
+	real_line_segment[1].set_xyz(line_func.x + line_func.n * real_t_e, line_func.y + line_func.m * real_t_e, line_func.z + line_func.l * real_t_e);
+
+	m_cloud_viewer->update_line(real_line_segment);
+}
+
+void PickHandler::process_plane()
+{
+	if (m_picked_points.size() < 3)
+	{
+		return;
+	}
+
+	plane_func_3d plane_func;
+
+	m_cloud_viewer->m_cf.fitting_plane_3d_linear_least_squares(m_picked_points, plane_func);
+
+	//std::cout
+	//	<< plane_func.a << " "
+	//	<< plane_func.b << " "
+	//	<< plane_func.c << " "
+	//	<< plane_func.d << " "
+	//	<< std::endl;
 
 	point_3d min_p, max_p;
 
 	max_min_point_3d_vec(m_picked_points, min_p, max_p);
 
-	line_func_3d lind_func;
+	pedalpoint_point_to_plane(min_p, plane_func, min_p);
 
-	m_cloud_viewer->m_cf.fitting_line_3d_linear_least_squares(m_picked_points, lind_func);
+	pedalpoint_point_to_plane(max_p, plane_func, max_p);
 
-	//std::cout << "max_p:" << max_p << std::endl << "min_p:" << min_p << std::endl;
+	// using four points to draw a biggest rectangle
+	Eigen::Vector3f 
+		diagonal = 
+		Eigen::Vector3f(max_p.x - min_p.x, max_p.y - min_p.y, max_p.z - min_p.z),
+		line_direction =
+		diagonal.cross(Eigen::Vector3f(plane_func.a, plane_func.b, plane_func.c));
 
-	//std::cout
-	//	<< lind_func.x << " " << lind_func.y << " " << lind_func.z << " "
-	//	<< lind_func.n << " " << lind_func.m << " " << lind_func.l << std::endl;
+	point_3d
+		mid_point = point_3d((min_p.x + max_p.x) / 2, (min_p.y + max_p.y) / 2, (min_p.z + max_p.z) / 2),
+		corner_p1, corner_p2;
 
-	m_cloud_viewer->update_line(lind_func, min_p, max_p);
+	float half_dis = diagonal.norm() / 2;
 
+	point_along_with_vector_within_dis(mid_point, line_direction, corner_p1, corner_p2, half_dis);
+
+	//std::vector<point_3d> test_vec{ mid_point ,corner_p1 , corner_p2, min_p, max_p };
+	//m_cloud_viewer->update_testing_point_cloud(test_vec, 255, 0, 0, 20);
+
+	std::vector<point_3d> biggest_rectangle{ min_p,max_p,corner_p1,corner_p2 }, convex_hull_points_ordered;
+
+	make_points_ordered_by_distance(biggest_rectangle, convex_hull_points_ordered);
+
+	//m_cloud_viewer->update_testing_point_cloud(convex_hull_points_ordered, 255, 0, 0, 20);
+
+	m_cloud_viewer->update_plane(convex_hull_points_ordered, 0, 255, 0);
+}
+
+void PickHandler::process_cylinder()
+{
+	// TODO
 }
 
 bool PickHandler::add_point_to_picked_vector(const point_3d & p)

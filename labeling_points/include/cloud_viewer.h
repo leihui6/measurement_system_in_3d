@@ -67,6 +67,10 @@ private:
 
 	void process_line();
 
+	void process_plane();
+
+	void process_cylinder();
+
 private:
 	
 	cloud_viewer * m_cloud_viewer;
@@ -97,11 +101,16 @@ public:
 	// update selected point cloud
 	void update_selected_point_cloud(std::vector<point_3d>& points, float r, float g, float b, float point_size);
 
+	// update testing points
+	void update_testing_point_cloud(std::vector<point_3d>& points, float r, float g, float b, float point_size);
+
 	void create_display_window(const std::string & window_name);
 
 	//void add_lines(std::vector<point_3d> & points, float line_width = 3.0, float r = 0, float g = 0, float b = 0);
 	
-	void update_line(line_func_3d & line_func, point_3d & line_segment_begin, point_3d & line_segment_end, float r = 255, float g = 255, float b = 255, float line_width = 4);
+	void update_line(std::vector<point_3d> & line_segment, float r = 0, float g = 0, float b = 0, float line_width = 4.0);
+
+	void update_plane(std::vector<point_3d> & plane_hull, float r = 0, float g = 0, float b = 0);
 
 	void add_model(const std::string & filename);
 
@@ -132,6 +141,12 @@ private:
 
 	// only one geometry, which used to show fitted line points, hooked on this geode.
 	osg::ref_ptr<osg::Geode> m_geode_fitted_line;
+
+	// only one geometry, which used to show fitted line points, hooked on this geode.
+	osg::ref_ptr<osg::Geode> m_geode_fitted_plane;
+
+	// for testing
+	osg::ref_ptr<osg::Geode> m_geode_testing;
 
 	osg::ref_ptr<osgViewer::Viewer> m_viewer;
 

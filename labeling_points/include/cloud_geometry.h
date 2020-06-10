@@ -57,22 +57,25 @@ typedef point_3d point_3d;
 struct line_func_3d
 {
 	line_func_3d();
-
-	float x, y, z;
-
+	
+	void set_xyz(float x, float y, float z);
+	
+	void set_nml(float n, float m, float l);
+	
 	float n, m, l;
 
-	void set_xyz(float x, float y, float z);
-
-	void set_nml(float n, float m, float l);
+	float x, y, z;
 };
 
-struct plane_func
+struct plane_func_3d
 {
-	plane_func();
+	plane_func_3d();
+
+	void set_abcd(float a, float b, float c, float d);
 
 	float a, b, c, d;
 };
+
 struct cylinder_func
 {
 	cylinder_func();
@@ -143,7 +146,7 @@ void points_to_geometry_node(std::vector<point_3d> & points, osg::ref_ptr<osg::G
 void max_min_point_3d_vec(std::vector<point_3d> & points, point_3d & min_p, point_3d & max_p);
 
 // get minimal value and maximal value in a specific array
-void max_min_value_array(std::vector<float> vec, float & min_value, float & max_value);
+void max_min_value_array(std::vector<float> & vec, float & min_value, float & max_value);
 
 // calculate the min and max t in line function, min_max_t[0-2]: min_t; min_max[3-5]:max_t
 void man_min_t_line_function(line_func_3d & line_func, point_3d & min_p, point_3d & max_p, std::vector<float>& min_t, std::vector<float> &max_t);
@@ -151,14 +154,26 @@ void man_min_t_line_function(line_func_3d & line_func, point_3d & min_p, point_3
 // calculate the appropriate t that could let point be closer to target point
 void get_appropriate_t(line_func_3d & line_func, std::vector<float> t_vec, point_3d target_point, float & real_t);
 
+// void get_distance_points_to_plane(std::vector<float> & points, plane_func_3d & plane_func, std::vector<float> & dis_to_plane);
+
 void transform_points(std::vector<point_3d>& points, Eigen::Matrix4f & t, std::vector<point_3d>& ret_points);
 
+// get a pedal point from a point to a line
 void pedalpoint_point_to_line(const point_3d & point, const line_func_3d & _line_func_3d, point_3d & pedalpoint);
+
+// get a pedal point from a point to a plane
+void pedalpoint_point_to_plane(const point_3d & point, const plane_func_3d & plane_func, point_3d & pedalpoint);
 
 void distance_points_to_line(const std::vector<point_3d>& points, const line_func_3d & _line_func_3d, std::vector<float>& points_dis_vec);
 
 void distance_point_to_point(const point_3d & point_1, const point_3d & point_2, float & distance);
 
 void save_points(const std::vector<point_3d>& points, const std::string & filename);
+
+void make_points_ordered_by_distance(std::vector<point_3d>& points, std::vector<point_3d>& ordered_points);
+
+void point_along_with_vector_within_dis(point_3d & point, Eigen::Vector3f & line_dir, point_3d & result_p1, point_3d & result_p2, float distance);
+
+bool is_parallel_vector(const Eigen::Vector3f & v1, const Eigen::Vector3f & v2);
 
 #endif // !CLOUD_POINT_H
