@@ -20,20 +20,15 @@ For now, all steps are testing and running on `Windows 10` with `visual studio 2
 
 Every step should has its dependencies libraries, also might require the whole libs as follows.
 
-- Eigen 3.3.7 [link](http://eigen.tuxfamily.org/index.php?title=Main_Page)
-  - for core geometric calculation
-- OpenSceneGraph 3.6.4 [link](http://www.openscenegraph.org/)
-  - for visulization of point cloud
-- nanoflann [link](https://github.com/jlblancoc/nanoflann)
-  - for searching in point cloud
-- CGAL 5.0.2 (The Computational Geometry Algorithms Library) [link](https://www.cgal.org/)
-  - for associating with core geometric calculation
-- OpenGR(A C++ library for 3D Global Registration) [link](https://github.com/STORM-IRIT/OpenGR)
-  - for coarsing registration bwtween two arbitrarily located and arbitrarily oriented point clouds.
-- libpointmatcher with `yaml-cpp-pm` [link](https://github.com/ethz-asl/libpointmatcher) 
-  - for "Iterative Closest Point"
-- cxxopts [link](https://github.com/jarro2783/cxxopts)
-  - for parsing line command
+| library | purpose | link | usage|
+| :---:         |     :---:      |         :---: | :---:|
+| Eigen 3.3.7   |  core geometric calculation     | [link](http://eigen.tuxfamily.org/index.php?title=Main_Page)    | header-only |
+| OpenSceneGraph 3.6.4  |  visulization of point cloud     | [link](http://www.openscenegraph.org/)    | require compile |
+| nanoflann 3.6.4  | searching in point cloud     | [link](https://github.com/jlblancoc/nanoflann)   | header-only |
+| CGAL 5.0.2  (The Computational Geometry Algorithms Library) | associating with core geometric calculation     | [link](https://www.cgal.org/)   | rquire compile|
+| OpenGR(A C++ library for 3D Global Registration)  |  coarsing registration bwtween two arbitrarily located and arbitrarily oriented point clouds.   | [link](https://github.com/STORM-IRIT/OpenGR) or [link](https://storm-irit.github.io/OpenGR/index.html)   | require compile |
+| libpointmatcher with `yaml-cpp-pm`   | Iterative Closest Point    | [link](https://github.com/ethz-asl/libpointmatcher)   | require compile |
+| cxxopts  |  parsing line command     |[link](https://github.com/jarro2783/cxxopts)  | header-only |
 
 ## Demo
 
