@@ -29,23 +29,35 @@ bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapt
 		break;
 	}
 
+
+	//std::cout << "user's input type is:" << status << std::endl;
+
+	osg::ref_ptr< osgViewer::View> viewer = dynamic_cast<osgViewer::View*>(&aa);
+	
+	point_3d pp;
+
 	// do nothing 
 	if (pick_status == 0)
 	{
+		if (viewer)
+		{
+			bool is_clicked = get_picked_point(viewer, ea.getX(), ea.getY(), pp);
+
+			if (is_clicked)
+			{
+				std::vector<point_3d> hover_point{ pp };
+				
+				m_cloud_viewer->update_hover_point_cloud(hover_point, 255, 0, 0, 10);
+			}
+		}
 		return false;
 	}
 
-	//std::cout << "user's input type is:" << status << std::endl;
-	
-	osg::ref_ptr< osgViewer::View> viewer = dynamic_cast<osgViewer::View*>(&aa);
-
 	if (viewer)
 	{
-		point_3d pp; // picked point
-
 		bool is_clicked = get_picked_point(viewer, ea.getX(), ea.getY(), pp);
 
-		std::cout << "picked point=" << pp << std::endl;
+		//std::cout << "picked point=" << pp << std::endl;
 
 		// picking operation
 		if (pick_status == 1)
@@ -54,12 +66,12 @@ bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapt
 			{
 				if (add_point_to_picked_vector(pp))
 				{
-					std::cout << "added done" << std::endl;
+					//std::cout << "added done" << std::endl;
 				}
 			}
 			else
 			{
-				std::cout << "No points clicked can be collected, please be closer to the point" << std::endl;
+				//std::cout << "No points clicked can be collected, please be closer to the point" << std::endl;
 			}
 		}
 		// removing operation
@@ -78,23 +90,27 @@ bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapt
 			}
 		}
 
+		// only test
+		// m_picked_points = *m_cloud_viewer->get_target_points();
+
 		// update shapes by user's option
 		update_shapes();
 		
 		// update: showing on screen in real time
-		m_cloud_viewer->update_selected_point_cloud(m_picked_points, 255, 255, 255, 20);
+		m_cloud_viewer->update_selected_point_cloud(m_cloud_viewer->m_picked_points, 255, 255, 255, 20);
 
-		std::cout << "The size of selected points=" << m_picked_points.size() << std::endl;
+		//std::cout << "The size of selected points=" << m_cloud_viewer->m_picked_points.size() << std::endl;
 
+		return true;
 	} // end for viewer
 
 	return false;
 }
 
-void PickHandler::get_picked_points(std::vector<point_3d>& picked_points)
-{
-	picked_points = m_picked_points;
-}
+//void PickHandler::get_picked_points(std::vector<point_3d>& picked_points)
+//{
+//	picked_points = m_cloud_viewer->m_picked_points;
+//}
 
 bool PickHandler::get_picked_point(osg::ref_ptr< osgViewer::View> viewer, float window_x, float window_y, point_3d & p)
 {
@@ -135,8 +151,16 @@ cloud_viewer::cloud_viewer(const std::string & window_name)
 	// add a empty fitted plane points
 	m_geode_fitted_plane = add_point_cloud(empty_point_cloud);
 
+	// add a empty fitted cylinder points
+	m_geode_fitted_cylinder = add_point_cloud(empty_point_cloud);
+
 	// add a empty testing points
 	m_geode_testing = add_point_cloud(empty_point_cloud);
+
+	// add a empty hover points
+	m_geode_hover_point = add_point_cloud(empty_point_cloud);
+
+	m_geode_fitted_cylinder_centriod_point_on_bottom = add_point_cloud(empty_point_cloud);
 }
 
 cloud_viewer::~cloud_viewer()
@@ -244,6 +268,22 @@ void cloud_viewer::update_testing_point_cloud(std::vector<point_3d>& points, flo
 	m_geode_testing->setChild(0, geometry);
 }
 
+void cloud_viewer::update_hover_point_cloud(std::vector<point_3d>& points, float r, float g, float b, float point_size)
+{
+	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+
+	points_to_geometry_node(points, geometry, r, g, b);
+
+	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS, 0, points.size()));
+
+	osg::StateSet* stateSet = geometry->getOrCreateStateSet();
+	osg::Point* state_point_size = new osg::Point;
+	state_point_size->setSize(point_size);
+	stateSet->setAttribute(state_point_size);
+
+	m_geode_hover_point->setChild(0, geometry);
+}
+
 void cloud_viewer::create_display_window(const std::string & window_name)
 {
 	m_viewer->setCameraManipulator(new osgGA::TrackballManipulator);
@@ -292,6 +332,15 @@ void cloud_viewer::create_display_window(const std::string & window_name)
 
 void cloud_viewer::update_line(std::vector<point_3d> & line_segment, float r, float g, float b, float line_width)
 {
+	if (line_segment.empty())
+	{
+		osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+
+		m_geode_fitted_line->setChild(0, geometry);
+
+		return;
+	}
+
 	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
 
 	points_to_geometry_node(line_segment, geometry, r, g, b);
@@ -305,19 +354,107 @@ void cloud_viewer::update_line(std::vector<point_3d> & line_segment, float r, fl
 	m_geode_fitted_line->setChild(0, geometry);
 }
 
-void cloud_viewer::update_plane(std::vector<point_3d> & plane_hull,float r, float g, float b)
+void cloud_viewer::update_plane(std::vector<point_3d> & plane_square,float r, float g, float b)
 {
+	if (plane_square.empty())
+	{
+		osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+
+		m_geode_fitted_plane->setChild(0, geometry);
+
+		return;
+	}
+
 	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
 
-	points_to_geometry_node(plane_hull, geometry, r, g, b);
+	points_to_geometry_node(plane_square, geometry, r, g, b);
 
-	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::QUADS, 0, plane_hull.size()));
+	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::QUADS, 0, plane_square.size()));
 
 	//osg::ref_ptr<osg::LineWidth> lw = new osg::LineWidth(line_width);
 
 	//geometry->getOrCreateStateSet()->setAttribute(lw, osg::StateAttribute::ON);
 
 	m_geode_fitted_plane->setChild(0, geometry);
+}
+
+void cloud_viewer::update_cylinder(point_3d & center_p, float radius, float height, Eigen::Vector3f & rotated_axis, float rotated_angle, float r, float g, float b)
+{
+	osg::ref_ptr<osg::Geode> geode = new osg::Geode();
+
+	osg::ref_ptr<osg::ShapeDrawable> sd = new osg::ShapeDrawable(
+		new osg::Cylinder
+		(
+			osg::Vec3(0, 0, 0),
+			radius,
+			height
+		)
+	);
+
+	osg::Matrix mRotate(osg::Matrix::identity()), mTrans(osg::Matrix::identity());
+
+	mTrans.makeTranslate(osg::Vec3f(center_p.x, center_p.y, center_p.z));
+
+	mRotate.makeRotate(osg::inDegrees(rotated_angle), rotated_axis[0], rotated_axis[1], rotated_axis[2]);
+
+	osg::ref_ptr<osg::MatrixTransform> mt = new osg::MatrixTransform(osg::Matrix::identity());
+
+	mt->setMatrix(mRotate*mTrans);
+
+	mt->addChild(sd);
+
+	geode->addChild(mt);
+
+	m_geode_fitted_cylinder->setChild(0, geode);
+}
+
+void cloud_viewer::update_cylinder(std::vector<point_3d>& cylinder_points, float r, float g, float b,float point_size)
+{
+	if (cylinder_points.empty())
+	{
+		osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+
+		m_geode_fitted_cylinder->setChild(0, geometry);
+
+		return;
+	}
+
+	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+
+	points_to_geometry_node(cylinder_points, geometry, r, g, b);
+
+	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS, 0, cylinder_points.size()));
+
+	osg::StateSet* stateSet = geometry->getOrCreateStateSet();
+	osg::Point* state_point_size = new osg::Point;
+	state_point_size->setSize(point_size);
+	stateSet->setAttribute(state_point_size);
+
+	m_geode_fitted_cylinder->setChild(0, geometry);
+}
+
+void cloud_viewer::update_cylinder_centriod_point_on_bottom(std::vector<point_3d>& points, float r, float g, float b, float point_size)
+{
+	if (points.empty())
+	{
+		osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+
+		m_geode_fitted_cylinder_centriod_point_on_bottom->setChild(0, geometry);
+
+		return;
+	}
+	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+
+	points_to_geometry_node(points, geometry, r, g, b);
+
+	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS, 0, points.size()));
+
+	osg::StateSet* stateSet = geometry->getOrCreateStateSet();
+	osg::Point* state_point_size = new osg::Point;
+	state_point_size->setSize(point_size);
+	stateSet->setAttribute(state_point_size);
+
+	m_geode_fitted_cylinder_centriod_point_on_bottom->setChild(0, geometry);
 }
 
 void cloud_viewer::add_model(const std::string & filename)
@@ -351,9 +488,9 @@ void cloud_viewer::display()
 	m_viewer->run();
 }
 
-void cloud_viewer::set_the_target_points(std::vector<point_3d> &points)
+void cloud_viewer::set_the_target_points(std::vector<point_3d> * points)
 {
-	m_target_points_ptr = std::make_shared< std::vector<point_3d>>(points);
+	m_target_points_ptr = points;
 }
 
 void cloud_viewer::set_the_interface_command(interface_command * ic_ptr)
@@ -361,14 +498,53 @@ void cloud_viewer::set_the_interface_command(interface_command * ic_ptr)
 	m_ic_ptr = ic_ptr;
 }
 
-void cloud_viewer::get_picked_points(std::vector<point_3d>& picked_points)
-{
-	m_selector->get_picked_points(picked_points);
-}
+//void cloud_viewer::get_picked_points(std::vector<point_3d>& picked_points)
+//{
+//	m_selector->get_picked_points(picked_points);
+//}
 
-std::shared_ptr<std::vector<point_3d>> cloud_viewer::get_target_points()
+std::vector<point_3d> * cloud_viewer::get_target_points()
 {
 	return m_target_points_ptr;
+}
+
+void cloud_viewer::clear_picked_points()
+{
+	m_picked_points.clear();
+
+	update_selected_point_cloud(m_picked_points, 255, 255, 255, 10);
+}
+
+void cloud_viewer::clear_shapes()
+{
+	std::vector<point_3d> empty_points;
+
+	update_line(empty_points);
+
+	update_plane(empty_points);
+
+	update_cylinder(empty_points);
+
+	update_cylinder_centriod_point_on_bottom(empty_points);
+}
+
+void cloud_viewer::save_points_to_vec(std::vector<point_3d> & points, std::vector < std::vector<point_3d>> & vec)
+{
+	if (points.empty())
+	{
+		return;
+	}
+	
+	vec.push_back(points);
+}
+
+void cloud_viewer::print_marked_info()
+{
+	std::cout
+		<< "here are information on marked shapes:\n"
+		<< "line shapes:" << m_line_points_vec.size() << "\n"
+		<< "plane shapes:" << m_plane_points_vec.size() << "\n"
+		<< "cylinder shapes:" << m_cylinder_points_vec.size() << "\n";
 }
 
 void PickHandler::screen_to_world(osg::ref_ptr<osgViewer::View> viewer, osg::Vec3d & screen_point, osg::Vec3d & world)
@@ -404,7 +580,7 @@ bool PickHandler::calc_intersection_between_ray_and_points(const line_func_3d & 
 {
 	std::vector<float> distance_vec;
 
-	std::shared_ptr<std::vector<point_3d>> target_points = m_cloud_viewer->get_target_points();
+	std::vector<point_3d> * target_points = m_cloud_viewer->get_target_points();
 
 	distance_points_to_line(*target_points, _line_func_3d, distance_vec);
 
@@ -436,11 +612,23 @@ bool PickHandler::calc_intersection_between_ray_and_points(const line_func_3d & 
 			(*target_points)[pick_point_index].y,
 			(*target_points)[pick_point_index].z);
 
+		pick_point.set_nxyz(
+			(*target_points)[pick_point_index].nx,
+			(*target_points)[pick_point_index].ny,
+			(*target_points)[pick_point_index].nz);
+
+		pick_point.set_rgb(
+			(*target_points)[pick_point_index].r,
+			(*target_points)[pick_point_index].g,
+			(*target_points)[pick_point_index].b);
+
 		return true;
 	}
 	else
 	{
 		pick_point.set_xyz(0, 0, 0);
+		pick_point.set_nxyz(0, 0, 0);
+		pick_point.set_rgb(0, 0, 0);
 
 		return false;
 	}
@@ -448,29 +636,42 @@ bool PickHandler::calc_intersection_between_ray_and_points(const line_func_3d & 
 
 void PickHandler::update_shapes()
 {
+	if (this->m_cloud_viewer->m_ic_ptr->cs == CS_QUIT)
+	{
+		std::cout << "shapes detection terminated by console\n";
+
+		return;
+	}
+
 	if (this->m_cloud_viewer->m_ic_ptr->dt == DT_LINE)
 	{
-		std::cout << "updating the line model ... " << std::endl;
+		//std::cout << "updating the line model ... " << std::endl;
 
 		process_line();
 		
-		std::cout << "line model updated done " << std::endl;
+		m_cloud_viewer->m_line_points = m_cloud_viewer->m_picked_points;
+
+		//std::cout << "line model updated done " << std::endl;
 	}
 	else if (this->m_cloud_viewer->m_ic_ptr->dt == DT_PLANE)
 	{
-		std::cout << "updating the plane model ... " << std::endl;
+		//std::cout << "updating the plane model ... " << std::endl;
 
-		process_plane();
+		plane_func_3d plane_func;
 
-		std::cout << "plane model updated done " << std::endl;
+		process_plane(plane_func);
+
+		m_cloud_viewer->m_plane_points = m_cloud_viewer->m_picked_points;
+
+		//std::cout << "plane model updated done " << std::endl;
 	}
 	else if (this->m_cloud_viewer->m_ic_ptr->dt == DT_CYLINDER)
 	{
-		std::cout << "updating the cylinder model ... " << std::endl;
+		//std::cout << "updating the cylinder model ... " << std::endl;
 
 		process_cylinder();
 
-		std::cout << "cylinder model updated done " << std::endl;
+		//std::cout << "cylinder model updated done " << std::endl;
 	}
 	else
 	{
@@ -492,18 +693,18 @@ void PickHandler::process_line()
 	3) calculate the "t" representing real begin and end point
 	4) draw a line from real begin point to real end point
 	*/
-	if (m_picked_points.size() < 2)
+	if (m_cloud_viewer->m_picked_points.size() < 2)
 	{
 		return;
 	}
 	
 	line_func_3d line_func;
 
-	m_cloud_viewer->m_cf.fitting_line_3d_linear_least_squares(m_picked_points, line_func);
+	m_cloud_viewer->m_cf.fitting_line_3d_linear_least_squares(m_cloud_viewer->m_picked_points, line_func);
 	
 	point_3d min_p, max_p;
 
-	max_min_point_3d_vec(m_picked_points, min_p, max_p);
+	max_min_point_3d_vec(m_cloud_viewer->m_picked_points, min_p, max_p);
 
 	std::vector<float>t_b, t_e;
 
@@ -559,19 +760,17 @@ void PickHandler::process_line()
 
 	real_line_segment[1].set_xyz(line_func.x + line_func.n * real_t_e, line_func.y + line_func.m * real_t_e, line_func.z + line_func.l * real_t_e);
 
-	m_cloud_viewer->update_line(real_line_segment);
+	m_cloud_viewer->update_line(real_line_segment, 0, 255, 0, 10);
 }
 
-void PickHandler::process_plane()
+void PickHandler::process_plane(plane_func_3d & plane_func)
 {
-	if (m_picked_points.size() < 3)
+	if (m_cloud_viewer->m_picked_points.size() < 3)
 	{
 		return;
 	}
 
-	plane_func_3d plane_func;
-
-	m_cloud_viewer->m_cf.fitting_plane_3d_linear_least_squares(m_picked_points, plane_func);
+	m_cloud_viewer->m_cf.fitting_plane_3d_linear_least_squares(m_cloud_viewer->m_picked_points, plane_func);
 
 	//std::cout
 	//	<< plane_func.a << " "
@@ -582,7 +781,7 @@ void PickHandler::process_plane()
 
 	point_3d min_p, max_p;
 
-	max_min_point_3d_vec(m_picked_points, min_p, max_p);
+	max_min_point_3d_vec(m_cloud_viewer->m_picked_points, min_p, max_p);
 
 	pedalpoint_point_to_plane(min_p, plane_func, min_p);
 
@@ -606,23 +805,101 @@ void PickHandler::process_plane()
 	//std::vector<point_3d> test_vec{ mid_point ,corner_p1 , corner_p2, min_p, max_p };
 	//m_cloud_viewer->update_testing_point_cloud(test_vec, 255, 0, 0, 20);
 
-	std::vector<point_3d> biggest_rectangle{ min_p,max_p,corner_p1,corner_p2 }, convex_hull_points_ordered;
+	std::vector<point_3d> biggest_rectangle{ min_p,max_p,corner_p1,corner_p2 }, drawable_points_ordered;
 
-	make_points_ordered_by_distance(biggest_rectangle, convex_hull_points_ordered);
+	make_points_ordered_by_distance(biggest_rectangle, drawable_points_ordered);
 
 	//m_cloud_viewer->update_testing_point_cloud(convex_hull_points_ordered, 255, 0, 0, 20);
 
-	m_cloud_viewer->update_plane(convex_hull_points_ordered, 0, 255, 0);
+	m_cloud_viewer->update_plane(drawable_points_ordered, 0, 255, 0);
 }
 
 void PickHandler::process_cylinder()
 {
-	// TODO
+	if (m_cloud_viewer->m_picked_points.size() < 5)
+	{
+		return;
+	}
+
+	if (m_cloud_viewer->m_ic_ptr->cs == CS_SELECTING_POINTS)
+	{
+		std::cout << "please marking points represent the bottom plane of cylinder.\n";
+
+		// green to show bottom plane choosed by user
+		process_plane(m_cylinder_plane_func);
+
+		centroid_from_points(m_cloud_viewer->m_picked_points, m_centriod_point_on_bottom);
+
+		std::vector<point_3d> cpb{ m_centriod_point_on_bottom };
+
+		// black color to show center point on bottom
+		m_cloud_viewer->update_cylinder_centriod_point_on_bottom(cpb, 0, 0, 0, 15);
+
+		// set the cylinder function
+		m_cylinder_func.m_line_func.set_nml(m_cylinder_plane_func.a, m_cylinder_plane_func.b, m_cylinder_plane_func.c);
+
+		m_cylinder_func.m_line_func.set_xyz(m_centriod_point_on_bottom.x, m_centriod_point_on_bottom.y, m_centriod_point_on_bottom.z);
+
+		mean_distance_from_point_to_points(m_cloud_viewer->m_picked_points, m_centriod_point_on_bottom, m_cylinder_func.r);
+
+		points_on_cylinder(*m_cloud_viewer->get_target_points(), m_cloud_viewer->m_cylinder_points, m_cylinder_func, m_cylinder_func.r, 0.3);
+
+		m_cloud_viewer->update_cylinder(m_cloud_viewer->m_cylinder_points, 0, 0, 255, 4);
+
+	}
+	//else if (m_cloud_viewer->m_ic_ptr->cs_for_cylinder == CS_SELECTING_CYLINDER_DONE)
+	//{
+	//	std::cout << "saving points representing the cylinder. \n";
+
+	//}
+
+	/*
+	size_t require_number = 5;
+
+	if (m_picked_points.size() < 5)
+	{
+		std::cout << "points to find cylinder not enough, " << require_number - m_picked_points.size() << " points need" << std::endl;
+
+		return;
+	}
+	
+	std::vector<point_3d> & points = m_picked_points;
+
+	cylinder_func _cylinder_func;
+
+	m_cloud_viewer->m_cf.fitting_cylinder_ransac(m_picked_points, _cylinder_func, 100);
+
+	point_3d center_p;
+	float height = 0.0, radius = 0.0;
+	cylinder_func_to_osg_structure(m_picked_points, _cylinder_func, center_p, height, radius);
+
+	std::cout
+		<< "center_point=" << center_p << "\n"
+		<< "radius=" << radius << "\n"
+		<< "height=" << height << "\n";
+
+	Eigen::Vector3f z_axis(0, 0, 1);
+
+	Eigen::Vector3f cylinder_line_dir(_cylinder_func.m_line_func.n, _cylinder_func.m_line_func.m, _cylinder_func.m_line_func.l);
+
+	cylinder_line_dir.normalize();
+
+	Eigen::Vector3f  rotated_axis = z_axis.cross(cylinder_line_dir);
+
+	float rotated_angle = 0.0;
+
+	angle_between_two_vector_3d(z_axis, cylinder_line_dir, rotated_angle);
+
+	std::cout << "rotated_angle=" << rotated_angle << std::endl;
+
+	m_cloud_viewer->update_cylinder(center_p, radius, height, rotated_axis, rotated_angle, 0, 255, 0);
+	*/
 }
 
 bool PickHandler::add_point_to_picked_vector(const point_3d & p)
 {
-	for (std::vector<point_3d>::iterator it = m_picked_points.begin(); it != m_picked_points.end(); ++it)
+	for (std::vector<point_3d>::iterator it = m_cloud_viewer->m_picked_points.begin();
+		it != m_cloud_viewer->m_picked_points.end(); ++it)
 	{
 		if (it->x == p.x &&it->y == p.y &&it->z == p.z)
 		{
@@ -632,20 +909,21 @@ bool PickHandler::add_point_to_picked_vector(const point_3d & p)
 		}
 	}
 
-	m_picked_points.push_back(p);
+	m_cloud_viewer->m_picked_points.push_back(p);
 
 	return true;
 }
 
 bool PickHandler::remove_point_from_picked_vector(const point_3d & p)
 {
-	for (std::vector<point_3d>::iterator it = m_picked_points.begin(); it != m_picked_points.end(); ++it)
+	for (std::vector<point_3d>::iterator it = m_cloud_viewer->m_picked_points.begin(); 
+		it != m_cloud_viewer->m_picked_points.end(); ++it)
 	{
 		if (it->x == p.x &&it->y == p.y &&it->z == p.z)
 		{
 			std::cout << "point unclicked from picked set" << std::endl;
 
-			it = m_picked_points.erase(it);
+			it = m_cloud_viewer->m_picked_points.erase(it);
 
 			return true;
 		}

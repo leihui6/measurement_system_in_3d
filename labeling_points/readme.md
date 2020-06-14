@@ -8,18 +8,14 @@ The purpose of this stage is to select a bunch of points that could represent th
 
 - The Computational Geometry Algorithms Library(CGAL) 5.0.2
 
-- cxxopts
-
 ## Progress
 
 - [x] fitting line & showing
 - [x] fitting plane & showing
-- [ ] fitting cylinder & showing
+- [x] fitting cylinder & showing // TODO
 - [ ] export to file (To decide which format to store selection information)
 - [ ] communication with other components successfully
 
 ## Demo in each stage
 
-![demo1](./demo/pick_points.gif)
-
-![demo2](./demo/pick_plane.gif)
+![demo1](./demo/pick_points.gif)![demo2](./demo/pick_plane.gif)![demo3](./demo/marking_cylinder.png)

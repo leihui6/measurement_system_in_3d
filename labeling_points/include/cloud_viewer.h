@@ -11,6 +11,7 @@
 #include <osg/MatrixTransform>
 #include <osgGA/GUIEventHandler>
 #include <osg/Point>
+#include <osg/ShapeDrawable>
 #include <osg/Geometry>
 #include <osg/Geode>
 #include <osg/LineWidth>
@@ -22,23 +23,14 @@
 #include <osgUtil/DelaunayTriangulator> 
 #include <osgGA/TrackballManipulator>
 
+
 #include "interface_command.h"
 #include "cloud_fitting.h"
 #include "cloud_geometry.h"
 
 class cloud_viewer;
 
-struct osg_point_structure
-{
-	osg_point_structure() :
-		coords(new osg::Vec3Array()),
-		colors(new osg::Vec4Array()),
-		normals(new osg::Vec3Array()) {}
-
-	osg::ref_ptr<osg::Vec3Array> coords;
-	osg::ref_ptr<osg::Vec4Array> colors;
-	osg::ref_ptr<osg::Vec3Array> normals;
-};
+class interface_command;
 
 //! pick point on point cloud
 class PickHandler : public osgGA::GUIEventHandler
@@ -49,10 +41,10 @@ public:
 
 	virtual bool handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa);
 
-	void get_picked_points(std::vector<point_3d> & picked_points);
+	//void get_picked_points(std::vector<point_3d> & picked_points);
 
 private:
-	
+
 	bool get_picked_point(osg::ref_ptr< osgViewer::View> viewer, float window_x, float window_y, point_3d & p);
 
 	void screen_to_world(osg::ref_ptr<osgViewer::View> viewer, osg::Vec3d & screen_point, osg::Vec3d & world);
@@ -67,15 +59,22 @@ private:
 
 	void process_line();
 
-	void process_plane();
+	void process_plane(plane_func_3d & plane_func);
 
 	void process_cylinder();
 
-private:
-	
-	cloud_viewer * m_cloud_viewer;
+public:
 
-	std::vector<point_3d> m_picked_points;
+	// for showing
+	plane_func_3d m_cylinder_plane_func;
+
+	point_3d m_centriod_point_on_bottom;
+
+	cylinder_func m_cylinder_func;
+
+private:
+
+	cloud_viewer * m_cloud_viewer;
 
 	bool add_point_to_picked_vector(const point_3d & p);
 
@@ -98,43 +97,77 @@ public:
 	osg::ref_ptr<osg::Geode> add_point_cloud(std::vector<point_3d> & points, float point_size = 4,
 		Eigen::Matrix4f transform = Eigen::Matrix4f::Identity());
 
+	void create_display_window(const std::string & window_name);
+
+	//void add_lines(std::vector<point_3d> & points, float line_width = 3.0, float r = 0, float g = 0, float b = 0);
+
+	void update_line(std::vector<point_3d> & line_segment, float r = 0, float g = 0, float b = 0, float line_width = 4.0);
+
+	void update_plane(std::vector<point_3d> & plane_square, float r = 0, float g = 0, float b = 0);
+
+	void update_cylinder(point_3d & center_p, float radius, float height, Eigen::Vector3f & rotated_axis, float rotated_angle, float r, float g, float b);
+
+	void update_cylinder(std::vector<point_3d>& cylinder_points, float r = 0, float g = 0, float b = 0, float point_size = 4.0);
+
+	void update_cylinder_centriod_point_on_bottom(std::vector<point_3d>& points, float r = 0, float g = 0, float b = 0, float point_size = 4.0);
+
 	// update selected point cloud
 	void update_selected_point_cloud(std::vector<point_3d>& points, float r, float g, float b, float point_size);
 
 	// update testing points
 	void update_testing_point_cloud(std::vector<point_3d>& points, float r, float g, float b, float point_size);
 
-	void create_display_window(const std::string & window_name);
-
-	//void add_lines(std::vector<point_3d> & points, float line_width = 3.0, float r = 0, float g = 0, float b = 0);
-	
-	void update_line(std::vector<point_3d> & line_segment, float r = 0, float g = 0, float b = 0, float line_width = 4.0);
-
-	void update_plane(std::vector<point_3d> & plane_hull, float r = 0, float g = 0, float b = 0);
+	// update hover point(s) in real time
+	void update_hover_point_cloud(std::vector<point_3d>& points, float r, float g, float b, float point_size);
 
 	void add_model(const std::string & filename);
 
 	void display();
 
-	void set_the_target_points(std::vector<point_3d> & points);
+	void set_the_target_points(std::vector<point_3d> * points);
 
 	void set_the_interface_command(interface_command * ic_ptr);
 
-	void get_picked_points(std::vector<point_3d> & picked_points);
+	//void get_picked_points(std::vector<point_3d> & picked_points);
 
-	std::shared_ptr<std::vector<point_3d>> get_target_points();
+	std::vector<point_3d> * get_target_points();
+
+	void clear_picked_points();
+
+	void clear_shapes();
+
+	void save_points_to_vec(std::vector<point_3d> & points, std::vector < std::vector<point_3d>> & vec);
+
+	void print_marked_info();
 
 public:
-
 	// interface command pointer, TODO: to be shared pointer
 	interface_command * m_ic_ptr;
 
 	cloud_fitting m_cf;
 
+	// update once picking, this is current points
+	std::vector<point_3d> m_line_points;
+
+	std::vector<point_3d> m_plane_points;
+
+	std::vector<point_3d> m_cylinder_points;
+
+	std::vector < std::vector<point_3d>> m_line_points_vec;
+
+	std::vector < std::vector<point_3d>> m_plane_points_vec;
+
+	std::vector < std::vector<point_3d>> m_cylinder_points_vec;
+
+	std::vector<point_3d> m_picked_points;
+
 private:
 	osg::ref_ptr<PickHandler> m_selector;
 
 	osg::ref_ptr<osg::Group> m_root;
+
+	// for hover
+	osg::ref_ptr<osg::Geode> m_geode_hover_point;
 
 	// only one geometry, which used to show selected points, hooked on this geode, 
 	osg::ref_ptr<osg::Geode> m_geode_selected_point_cloud;
@@ -142,15 +175,22 @@ private:
 	// only one geometry, which used to show fitted line points, hooked on this geode.
 	osg::ref_ptr<osg::Geode> m_geode_fitted_line;
 
-	// only one geometry, which used to show fitted line points, hooked on this geode.
+	// after picking, update on screen in real time
 	osg::ref_ptr<osg::Geode> m_geode_fitted_plane;
 
-	// for testing
-	osg::ref_ptr<osg::Geode> m_geode_testing;
+	// after picking, update on screen in real time
+	osg::ref_ptr<osg::Geode> m_geode_fitted_cylinder;
+
+	// in step of marking cylinder, it used to show the center point on bottom of cylinder
+	osg::ref_ptr<osg::Geode> m_geode_fitted_cylinder_centriod_point_on_bottom;
 
 	osg::ref_ptr<osgViewer::Viewer> m_viewer;
 
-	std::shared_ptr<std::vector<point_3d>> m_target_points_ptr;
+	std::vector<point_3d> * m_target_points_ptr;
+
+	// below could be deleted after releasing
+	// for testing
+	osg::ref_ptr<osg::Geode> m_geode_testing;
 };
 #endif // !cloud_viewer_H
 

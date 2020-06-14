@@ -6,12 +6,16 @@
 // Stardard library in c++ 11 
 #include <vector>
 #include <fstream>
+#include <math.h>
+#define _USE_MATH_DEFINES
 
 // Eigen
 #include <Eigen/Dense>
 
 // CGAL
 #include <CGAL/Simple_cartesian.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+typedef CGAL::Exact_predicates_inexact_constructions_kernel  Kernel;
 
 // OpenGR
 #include <gr/algorithms/match4pcsBase.h>
@@ -39,17 +43,19 @@ struct point_3d
 
 	void set_rgb(float r, float g, float b);
 
-	float x, y, z;
-
-	float nx, ny, nz;
-
-	float r, g, b;
-
 	void to_eigen_vector4f(Eigen::Vector4f & vector4f_p);
 
 	void do_transform(Eigen::Matrix4f & t, point_3d & p);
 
 	friend std::ostream & operator << (std::ostream & os, const point_3d & p);
+
+	point_3d & operator = (const point_3d & p);
+
+	float x, y, z;
+
+	float nx, ny, nz;
+
+	float r, g, b;
 };
 
 typedef point_3d point_3d;
@@ -62,6 +68,10 @@ struct line_func_3d
 	
 	void set_nml(float n, float m, float l);
 	
+	point_3d get_point();
+
+	point_3d get_normal();
+
 	float n, m, l;
 
 	float x, y, z;
@@ -72,6 +82,8 @@ struct plane_func_3d
 	plane_func_3d();
 
 	void set_abcd(float a, float b, float c, float d);
+
+	void get_normal(point_3d & normal);
 
 	float a, b, c, d;
 };
@@ -130,6 +142,10 @@ struct point_cloud
 
 point_3d to_point_3d(osg::Vec3d & p);
 
+// convert to cgal point containing x,y,z,n,m,l
+void convert_to_CGAL_points(std::vector<point_3d> & points, std::vector<std::pair<Kernel::Point_3, Kernel::Vector_3>> &cgal_points);
+
+// convert to cgal point only containing x,y,z
 void convert_to_CGAL_points(std::vector<point_3d> & points, std::vector< CGAL::Simple_cartesian<float>::Point_3> &cgal_points);
 
 void convert_to_original_points(std::vector< CGAL::Simple_cartesian<float>::Point_3> &cgal_points, std::vector<point_3d> & points);
@@ -139,6 +155,9 @@ void convert_to_openGR_points(std::vector<point_3d> & points, std::vector<gr::Po
 void convert_to_pointMatcher_points(std::vector<point_3d> & points, PointMatcher<float>::DataPoints & DP);
 
 void points_to_osg_structure(std::vector<point_3d>& points, osg::ref_ptr<osg::Vec3Array> coords, osg::ref_ptr<osg::Vec4Array> color, osg::ref_ptr<osg::Vec3Array> normals, float r = 0, float g = 0, float b = 0);
+
+// osg needs (p,height,radius) to draw cylinder on screen instead of only cylinder function
+void cylinder_func_to_osg_structure(std::vector<point_3d> & points, cylinder_func & cl, point_3d & center_p, float &height, float &radius);
 
 void points_to_geometry_node(std::vector<point_3d> & points, osg::ref_ptr<osg::Geometry> geometry, float r = 0, float g = 0, float b = 0);
 
@@ -166,7 +185,11 @@ void pedalpoint_point_to_plane(const point_3d & point, const plane_func_3d & pla
 
 void distance_points_to_line(const std::vector<point_3d>& points, const line_func_3d & _line_func_3d, std::vector<float>& points_dis_vec);
 
+void distance_point_to_line(const point_3d& points, const line_func_3d & _line_func_3d, float & points_dis);
+
 void distance_point_to_point(const point_3d & point_1, const point_3d & point_2, float & distance);
+
+void distance_point_to_plane(const point_3d & point, const plane_func_3d & plane_func, float & distance);
 
 void save_points(const std::vector<point_3d>& points, const std::string & filename);
 
@@ -175,5 +198,24 @@ void make_points_ordered_by_distance(std::vector<point_3d>& points, std::vector<
 void point_along_with_vector_within_dis(point_3d & point, Eigen::Vector3f & line_dir, point_3d & result_p1, point_3d & result_p2, float distance);
 
 bool is_parallel_vector(const Eigen::Vector3f & v1, const Eigen::Vector3f & v2);
+
+void plane_function_from_three_points(point_3d & A, point_3d & B, point_3d & C, plane_func_3d & plane_func);
+
+void points_on_plane(std::vector<point_3d>& points, std::vector<point_3d>& points_on_plane, plane_func_3d & plane_func, float distance_threshold);
+
+void points_on_cylinder(std::vector<point_3d>& points, std::vector<point_3d>& points_on_cylinder, cylinder_func & _cylinder_func, float specifical_distance, float threshold);
+
+void centroid_from_points(std::vector<point_3d>& points, point_3d & centroid_point);
+
+void standard_deviation(std::vector<float> & vec, float & deviation);
+
+// the probability that close to specifical value in vector
+void probability_close_to_value(std::vector<float> & vec, float specifical_value, float threshold, float & probability);
+
+void mean_distance_from_point_to_points(std::vector<point_3d>& points, point_3d & point, float & mean_distance);
+
+void angle_between_two_vector_3d(Eigen::Vector3f & p1, Eigen::Vector3f & p2, float & angle);
+
+void angle_between_two_vector_3d(point_3d & p1, point_3d & p2, float & angle);
 
 #endif // !CLOUD_POINT_H

@@ -1,10 +1,10 @@
 # Measurement System in 3D
 
-This is my final project in master's degree, that is *Automatic Industrial Measurement System Based on Registration*.
+This is my final project in master's degree,  that is *Automatic Industrial Measurement System Based on Registration*.
 
 ## Steps
 
-The work flow of this system was shown as following. All steps will be implemented in C++ and run on console using command(Windows or Linux) considering this is a huge project and I don't have too much time:
+The work flow of this system was shown as following. All steps will be implemented in C++ and run on console(Windows or Linux) considering this is a huge project and I don't have too much time:
 
 - [ ] [Labeling a set of points representing the shape to be detected](./labeling_points)
 - [ ] Rough registration
@@ -33,7 +33,7 @@ Every step should has its dependencies libraries, also might require the whole l
 - libpointmatcher with `yaml-cpp-pm` [link](https://github.com/ethz-asl/libpointmatcher) 
   - for "Iterative Closest Point"
 - cxxopts [link](https://github.com/jarro2783/cxxopts)
-  - for line command parse
+  - for parsing line command
 
 ## Demo
 

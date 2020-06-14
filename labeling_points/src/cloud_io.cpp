@@ -1,6 +1,10 @@
 #include "cloud_io.h"
 
-bool load_point_cloud_txt(const std::string & filename, std::vector<point_3d>& points)
+//! read point data from files
+/*
+	//...
+*/
+bool load_point_cloud_txt(const std::string & filename, std::vector<point_3d>& points, bool fill_normals)
 {
 	std::ifstream ifile(filename, std::ios::in);
 
@@ -44,6 +48,15 @@ bool load_point_cloud_txt(const std::string & filename, std::vector<point_3d>& p
 	}
 
 	std::cout << "load_point_cloud_txt() " << filename << " size=" << points.size() << std::endl;
+
+	if (fill_normals)
+	{
+		cloud_processing cp;
+
+		cp.estimate_normals_with_k(points, 7);
+
+		std::cout << "estimating normals with points as required" << std::endl;
+	}
 
 	return true;
 }

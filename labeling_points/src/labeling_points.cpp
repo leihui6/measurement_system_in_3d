@@ -25,7 +25,9 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	interface_command ic;
+	cloud_viewer m_cloud_viewer("labeling points(shapes) to be detected");
+
+	interface_command ic(&m_cloud_viewer);
 
 	ic.run();
 
@@ -33,15 +35,13 @@ int main(int argc, char *argv[])
 
 	standard_point_cloud_filename = std::string(argv[1]);
 
-	std::vector<point_3d> points_1_vec, points_2_vec;
+	std::vector<point_3d> points_1_vec;
 
-	load_point_cloud_txt(standard_point_cloud_filename, points_1_vec);
-
-	cloud_viewer m_cloud_viewer("labeling points(shapes) to be detected");
+	load_point_cloud_txt(standard_point_cloud_filename, points_1_vec, true);
 
 	m_cloud_viewer.add_point_cloud(points_1_vec, 10);
 
-	m_cloud_viewer.set_the_target_points(points_1_vec);
+	m_cloud_viewer.set_the_target_points(&points_1_vec);
 
 	m_cloud_viewer.set_the_interface_command(&ic);
 

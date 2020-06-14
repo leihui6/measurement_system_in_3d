@@ -2,15 +2,9 @@
 
 point_3d::point_3d(const point_3d & p)
 {
-	this->x = p.x;
-	this->y = p.y;
-	this->z = p.z;
-	this->nx = p.nx;
-	this->ny = p.ny;
-	this->nz = p.nz;
-	this->r = p.r;
-	this->g = p.g;
-	this->b = p.b;
+	this->set_xyz(p.x, p.y, p.z);
+	this->set_nxyz(p.nx, p.ny, p.nz);
+	this->set_rgb(p.r, p.g, p.b);
 }
 
 point_3d::point_3d()
@@ -22,9 +16,9 @@ point_3d::point_3d()
 
 point_3d::point_3d(float x, float y, float z)
 {
-	this->x = x;
-	this->y = y;
-	this->z = z;
+	this->set_xyz(x, y, z);
+	this->set_nxyz(0, 0, 0);
+	this->set_rgb(0, 0, 0);
 }
 
 void point_3d::set_xyz(float x, float y, float z)
@@ -65,6 +59,17 @@ void point_3d::do_transform(Eigen::Matrix4f & t, point_3d & p)
 	p.set_xyz(tmp(0, 0), tmp(1, 0), tmp(2, 0));
 }
 
+point_3d & point_3d::operator=(const point_3d & p)
+{
+	if (this != &p)
+	{
+		this->set_xyz(p.x, p.y, p.z);
+		this->set_nxyz(p.nx, p.ny, p.nz);
+		this->set_rgb(p.r, p.g, p.b);
+	}
+	return *this;
+}
+
 std::ostream & operator << (std::ostream & os, const point_3d & p)
 {
 	std::cout
@@ -96,6 +101,16 @@ void line_func_3d::set_nml(float n, float m, float l)
 	this->l = l;
 }
 
+point_3d line_func_3d::get_point()
+{
+	return point_3d(this->x, this->y, this->z);
+}
+
+point_3d line_func_3d::get_normal()
+{
+	return point_3d(this->n, this->m, this->l);
+}
+
 plane_func_3d::plane_func_3d()
 	: a(0), b(0), c(0), d(0)
 {
@@ -110,6 +125,13 @@ void plane_func_3d::set_abcd(float a, float b, float c, float d)
 	this->d = d;
 }
 
+void plane_func_3d::get_normal(point_3d & normal)
+{
+	normal.x = this->a;
+	normal.y = this->b;
+	normal.z = this->c;
+}
+
 cylinder_func::cylinder_func()
 	: r(0)
 {
@@ -119,6 +141,19 @@ cylinder_func::cylinder_func()
 point_3d to_point_3d(osg::Vec3d & p)
 {
 	return point_3d(p.x(), p.y(), p.z());
+}
+
+void convert_to_CGAL_points(std::vector<point_3d> & points, std::vector<std::pair<Kernel::Point_3, Kernel::Vector_3>> & cgal_points)
+{
+	for (size_t i = 0; i < points.size(); ++i)
+	{
+		cgal_points.push_back(
+			std::make_pair<Kernel::Point_3, Kernel::Vector_3>(
+				Kernel::Point_3(points[i].x, points[i].y, points[i].z),
+				Kernel::Vector_3(points[i].nx, points[i].ny, points[i].nz)
+				));
+			//CGAL::Simple_cartesian<float>::Point_3(points[i].x, points[i].y, points[i].z));
+	}
 }
 
 void convert_to_CGAL_points(std::vector<point_3d>& points, std::vector<CGAL::Simple_cartesian<float>::Point_3> & cgal_points)
@@ -217,6 +252,35 @@ void points_to_osg_structure(std::vector<point_3d>& points, osg::ref_ptr<osg::Ve
 	}
 
 	normals->push_back(osg::Vec3(0.0f, 1.0f, 0.0f));
+}
+
+void cylinder_func_to_osg_structure(std::vector<point_3d>& points, cylinder_func & cl, point_3d & center_p, float &height, float  &radius)
+{
+	size_t max_distance_i = 0;
+
+	float max_distance = FLT_MIN;
+
+	for (size_t i = 0; i < points.size(); ++i)
+	{
+		point_3d pedal_point;
+
+		pedalpoint_point_to_line(points[i], cl.m_line_func, pedal_point);
+
+		float dis = 0.0;
+
+		distance_point_to_point(pedal_point, cl.m_line_func.get_point(), dis);
+
+		if (dis > max_distance)
+		{
+			max_distance = dis;
+
+			height = dis;
+		}
+	}
+
+	center_p = cl.m_line_func.get_point();
+
+	radius = cl.r;
 }
 
 void points_to_geometry_node(std::vector<point_3d>& points, osg::ref_ptr<osg::Geometry> geometry, float r, float g, float b)
@@ -396,14 +460,21 @@ void distance_points_to_line(const std::vector<point_3d>& points, const line_fun
 
 	for (size_t i = 0; i < points.size(); i++)
 	{
-		point_3d pedal_point; float dis = 0;
+		float dis = 0;
 
-		pedalpoint_point_to_line(points[i], _line_func_3d, pedal_point);
-
-		distance_point_to_point(points[i], pedal_point, dis);
+		distance_point_to_line(points[i], _line_func_3d, dis);
 
 		points_dis_vec[i] = dis;
 	}
+}
+
+void distance_point_to_line(const point_3d & point, const line_func_3d & _line_func_3d, float & points_dis)
+{
+	point_3d pedal_point;
+
+	pedalpoint_point_to_line(point, _line_func_3d, pedal_point);
+
+	distance_point_to_point(point, pedal_point, points_dis);
 }
 
 void distance_point_to_point(const point_3d & point_1, const point_3d & point_2, float & distance)
@@ -412,6 +483,15 @@ void distance_point_to_point(const point_3d & point_1, const point_3d & point_2,
 		(point_1.x - point_2.x)*(point_1.x - point_2.x) +
 		(point_1.y - point_2.y)*(point_1.y - point_2.y) +
 		(point_1.z - point_2.z)*(point_1.z - point_2.z));
+}
+
+void distance_point_to_plane(const point_3d & point, const plane_func_3d & plane_func, float & distance)
+{
+	point_3d pedal_point;
+
+	pedalpoint_point_to_plane(point, plane_func, pedal_point);
+
+	distance_point_to_point(point, pedal_point, distance);
 }
 
 void save_points(const std::vector<point_3d>& points, const std::string & filename)
@@ -555,6 +635,150 @@ bool is_parallel_vector(const Eigen::Vector3f & v1, const Eigen::Vector3f & v2)
 		return true;
 	}
 	return false;
+}
+
+void plane_function_from_three_points(point_3d & A, point_3d & B, point_3d & C, plane_func_3d & plane_func)
+{
+	Eigen::Vector3f 
+		AC = Eigen::Vector3f(C.x - A.x, C.y - A.y, C.z - A.z),
+		AB = Eigen::Vector3f(B.x - A.x, B.y - A.y, B.z - A.z);
+
+	Eigen::Vector3f
+		N = AC.cross(AB);
+	
+	float d = -(N[0] * A.x + N[1] * A.y + N[2] * A.z);
+
+	plane_func.set_abcd(N[0], N[1], N[2], d);
+}
+
+void points_on_plane(std::vector<point_3d>& points, std::vector<point_3d>& points_on_plane, plane_func_3d & plane_func, float distance_threshold)
+{
+	points_on_plane.clear();
+
+	for (size_t i = 0; i < points.size(); i++)
+	{
+		float dis_to_plane = 0.0;
+
+		distance_point_to_plane(points[i], plane_func, dis_to_plane);
+
+		if (dis_to_plane < distance_threshold)
+		{
+			points_on_plane.push_back(points[i]);
+		}
+	}
+}
+
+void points_on_cylinder(std::vector<point_3d>& points, std::vector<point_3d>& points_on_cylinder, cylinder_func & _cylinder_func, float specifical_distance, float threshold)
+{
+	points_on_cylinder.clear();
+
+	//std::cout << points.size() << std::endl;
+
+	for (size_t i = 0; i < points.size(); i++)
+	{
+		float dis_to_line = 0.0;
+
+		distance_point_to_line(points[i], _cylinder_func.m_line_func, dis_to_line);
+
+		if (fabs(dis_to_line - specifical_distance) < threshold)
+		{
+			points_on_cylinder.push_back(points[i]);
+		}
+	}
+}
+
+void centroid_from_points(std::vector<point_3d>& points, point_3d & centroid_point)
+{
+	float sum_xyz[3] = { 0,0,0 };
+
+	for (size_t i = 0; i < points.size(); ++i)
+	{
+		sum_xyz[0] += points[i].x;
+
+		sum_xyz[1] += points[i].y;
+		
+		sum_xyz[2] += points[i].z;
+	}
+
+	centroid_point.set_xyz(sum_xyz[0] / points.size(), sum_xyz[1] / points.size(), sum_xyz[2] / points.size());
+
+	//std::cout << "centroid_point:" << centroid_point << std::endl;
+}
+
+void standard_deviation(std::vector<float>& vec, float & deviation)
+{
+	if (vec.size() < 2)
+	{
+		deviation = 0.0;
+
+		return; 
+	}
+
+	float sum = std::accumulate(vec.begin(), vec.end(), 0);
+
+	float mean_value = sum / vec.size();
+
+	sum = 0;
+
+	for (size_t i = 0; i < vec.size(); ++i)
+	{
+		sum += powf(vec[i] - mean_value, 2);
+	}
+
+	deviation = sqrtf(sum / (vec.size() - 1));
+}
+
+void probability_close_to_value(std::vector<float>& vec, float specifical_value, float threshold, float & probability)
+{
+	size_t above_count = 0;
+
+	for (size_t i = 0; i < vec.size(); i++)
+	{
+		if (fabs(vec[i] - specifical_value) < threshold)
+		{
+			above_count++;
+		}
+	}
+
+	probability = above_count / (float)vec.size();
+}
+
+void mean_distance_from_point_to_points(std::vector<point_3d>& points, point_3d & point, float & mean_distance)
+{
+	float sum = 0.0;
+
+	for (size_t i = 0; i < points.size(); ++i)
+	{
+		float dis = 0.0;
+
+		distance_point_to_point(points[i], point, dis);
+
+		sum += dis;
+	}
+
+	mean_distance = (sum / points.size());
+}
+
+void angle_between_two_vector_3d(point_3d & p1, point_3d & p2, float & angle)
+{
+	Eigen::Vector3f ep1(p1.x, p1.y, p1.z), ep2(p2.x, p2.y, p2.z);
+
+	float
+		dot_value = ep1.dot(ep2),
+		lenSq1 = ep1.norm(),
+		lenSq2 = ep2.norm();
+
+	angle = acos(dot_value / sqrt(lenSq1 * lenSq2));
+}
+
+void angle_between_two_vector_3d(Eigen::Vector3f & p1, Eigen::Vector3f & p2, float & angle)
+{
+	float
+		dot_value = p1.dot(p2),
+		lenSq1 = p1.norm(),
+		lenSq2 = p2.norm();
+
+	angle = acosf(dot_value / (lenSq1 * lenSq2))* 180.0 / M_PI;
 }
 
 void point_cloud::load_points(std::vector<point_3d> & points)
