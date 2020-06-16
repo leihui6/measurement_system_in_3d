@@ -6,6 +6,10 @@
 *	Date: 06/06/2020
 */
 
+//#define LABELING_POINTS
+
+#ifdef LABELING_POINTS
+
 #include "cloud_io.h"
 #include "cloud_viewer.h"
 #include "cloud_search.h"
@@ -21,7 +25,7 @@ int main(int argc, char *argv[])
 {
 	if (argc < 2)
 	{
-		std::cerr << " please see help with \"--help\" "<< std::endl;
+		std::cerr << " please see help with \"--help\" " << std::endl;
 		return -1;
 	}
 
@@ -151,3 +155,5 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
+#endif // LABELING_POINTS

@@ -132,12 +132,12 @@ bool PickHandler::get_picked_point(osg::ref_ptr< osgViewer::View> viewer, float 
 cloud_viewer::cloud_viewer(const std::string & window_name)
 	: m_root(new osg::Group),
 	m_viewer(new osgViewer::Viewer),
-	m_target_points_ptr(nullptr),
+	m_target_points_ptr(new std::vector<point_3d>()),
 	m_ic_ptr(nullptr)
 {
 	// create a display window and initialize the camera 
 	create_display_window(window_name);
-	
+
 	// set the handler that controls the selection operation
 	m_selector = new PickHandler(this);
 
@@ -161,6 +161,8 @@ cloud_viewer::cloud_viewer(const std::string & window_name)
 	m_geode_hover_point = add_point_cloud(empty_point_cloud);
 
 	m_geode_fitted_cylinder_centriod_point_on_bottom = add_point_cloud(empty_point_cloud);
+
+	m_geode_reading_point_cloud = add_point_cloud(empty_point_cloud);
 }
 
 cloud_viewer::~cloud_viewer()
@@ -216,8 +218,6 @@ osg::ref_ptr<osg::Geode> cloud_viewer::add_point_cloud(std::vector<point_3d> & p
 	stateSet->setAttribute(state_point_size);
 
 	geode->addDrawable(geometry);
-
-	geode->setDataVariance(osg::Object::DYNAMIC);
 
 	osg::ref_ptr<osg::MatrixTransform> transformation = new osg::MatrixTransform;
 
@@ -457,6 +457,30 @@ void cloud_viewer::update_cylinder_centriod_point_on_bottom(std::vector<point_3d
 	m_geode_fitted_cylinder_centriod_point_on_bottom->setChild(0, geometry);
 }
 
+void cloud_viewer::update_reading_point_cloud(std::vector<point_3d>& points, float r, float g, float b, float point_size)
+{
+	if (points.empty())
+	{
+		osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+
+		m_geode_reading_point_cloud->setChild(0, geometry);
+
+		return;
+	}
+	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+
+	points_to_geometry_node(points, geometry, r, g, b);
+
+	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS, 0, points.size()));
+
+	osg::StateSet* stateSet = geometry->getOrCreateStateSet();
+	osg::Point* state_point_size = new osg::Point;
+	state_point_size->setSize(point_size);
+	stateSet->setAttribute(state_point_size);
+
+	m_geode_reading_point_cloud->setChild(0, geometry);
+}
+
 void cloud_viewer::add_model(const std::string & filename)
 {
 	osg::ref_ptr<osg::Node> node;
@@ -474,7 +498,7 @@ void cloud_viewer::add_model(const std::string & filename)
 
 void cloud_viewer::display()
 {
-	std::cout << "display()" << m_root->getNumChildren() << std::endl;;
+	std::cout << m_root->getNumChildren() << " node hooked on root." << std::endl;;
 
 	m_viewer->addEventHandler(m_selector.get());
 

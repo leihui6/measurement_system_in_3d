@@ -114,12 +114,15 @@ public:
 	// update selected point cloud
 	void update_selected_point_cloud(std::vector<point_3d>& points, float r, float g, float b, float point_size);
 
-	// update testing points
-	void update_testing_point_cloud(std::vector<point_3d>& points, float r, float g, float b, float point_size);
-
 	// update hover point(s) in real time
 	void update_hover_point_cloud(std::vector<point_3d>& points, float r, float g, float b, float point_size);
 
+	// update reading point cloud in fine and coarse registration
+	void update_reading_point_cloud(std::vector<point_3d>& points, float r, float g, float b, float point_size);
+
+	// update testing points
+	void update_testing_point_cloud(std::vector<point_3d>& points, float r, float g, float b, float point_size);
+	
 	void add_model(const std::string & filename);
 
 	void display();
@@ -183,6 +186,9 @@ private:
 
 	// in step of marking cylinder, it used to show the center point on bottom of cylinder
 	osg::ref_ptr<osg::Geode> m_geode_fitted_cylinder_centriod_point_on_bottom;
+
+	// update in real time in program "fine registration".
+	osg::ref_ptr<osg::Geode> m_geode_reading_point_cloud;
 
 	osg::ref_ptr<osgViewer::Viewer> m_viewer;
 

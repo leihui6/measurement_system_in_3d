@@ -13,8 +13,6 @@ The purpose of this stage is to select a bunch of points that could represent th
 - [x] fitting line & showing
 - [x] fitting plane & showing
 - [x] fitting cylinder & showing // TODO
-- [ ] export to file (To decide which format to store selection information)
-- [ ] communication with other components successfully
 
 ## Demo in each stage
 

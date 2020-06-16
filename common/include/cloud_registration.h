@@ -22,7 +22,7 @@ public:
 	result matrix should be applied to points2
 	points2->points1
 	*/
-	void fine_registration(std::vector<point_3d> & points1, std::vector<point_3d> &points2, Eigen::Matrix4f & ret_mat);
+	void fine_registration(std::vector<point_3d> & points1, std::vector<point_3d> &points2, const std::string & configuration_file_name, Eigen::Matrix4f & ret_mat);
 
 	void get_final_transform_matrix(Eigen::Matrix4f & final_transform_matrix);
 
