@@ -36,10 +36,8 @@ bool load_point_cloud_txt(const std::string & filename, std::vector<point_3d>& p
 
 		int i = 0;
 
-		while (s)
+		while (s >> tmp)
 		{
-			s >> tmp;
-
 			value[i] = tmp;
 
 			i++;

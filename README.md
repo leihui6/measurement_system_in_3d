@@ -7,7 +7,7 @@ This is my final project in master's degree,  that is *Automatic Industrial Meas
 The work flow of this system was shown as following. All steps will be implemented in C++ and run on console(Windows or Linux) considering this is a huge project and I don't have too much time:
 
 - [x] [Labeling a set of points representing the shape to be detected](./labeling_points)
-- [ ] Rough registration
+- [x] [Rough registration](./rough_registration)
 - [x] [Fine registration](./fine_registration)
 - [ ] Searching the points to be measured in specified point cloud
 - [ ] [delay]Combining all components 

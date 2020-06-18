@@ -1,6 +1,6 @@
 # fine_registration
 
-The goal of this program is to fine registration two point cloud based on Iterative Closest Point (ICP), which mainly implemented by `libpointmatcher`. And it can visualize the process of ICP registration using OSG.
+The goal of this stage is to fine registration two point cloud based on Iterative Closest Point (ICP), which mainly implemented by `libpointmatcher`. And it can visualize the process of ICP registration using OSG.
 
 Thanks to `libpointmatcher,` which did an entirely meaningful work in this field, it also helps me learn iterative closest point algorithm deeply.
 
@@ -16,8 +16,10 @@ Thanks to `libpointmatcher,` which did an entirely meaningful work in this field
 ## Usage
 
 ``` shell
-xxx.exe <reading_point_cloud.txt> <reference_point_cloud.txt> <icp_configruation_file.yaml> <icp_output_folder> 
+xxx.exe point_cloud_1 point_cloud_2 initial_matrix.txt data/icp_configuration.yaml output_folder
 ```
+
+The final transformed point cloud will be saved with name called `$(point_cloud_2)(without postfix)+"_transformed.txt"` in `$(output_folder)`
 
 ## Configuration file for ICP alogrithm
 

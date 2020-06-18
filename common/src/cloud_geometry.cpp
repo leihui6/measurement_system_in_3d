@@ -417,11 +417,25 @@ void get_appropriate_t(line_func_3d & line_func, std::vector<float> t_vec, point
 }
 void transform_points(std::vector<point_3d>& points, Eigen::Matrix4f & t, std::vector<point_3d>& ret_points)
 {
-	ret_points.resize(points.size());
-
-	for (size_t i = 0; i < points.size(); ++i)
+	if (&points == &ret_points)
 	{
-		points[i].do_transform(t, ret_points[i]);
+		std::vector<point_3d> points_tmp(points.size());;
+
+		for (size_t i = 0; i < points.size(); ++i)
+		{
+			points[i].do_transform(t, points_tmp[i]);
+		}
+
+		ret_points = points_tmp;
+	}
+	else
+	{
+		ret_points.resize(points.size());
+
+		for (size_t i = 0; i < points.size(); ++i)
+		{
+			points[i].do_transform(t, ret_points[i]);
+		}
 	}
 }
 

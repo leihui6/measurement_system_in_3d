@@ -9,17 +9,15 @@
 
 #ifdef FINE_REGISTRATION
 
-#include <filesystem>
-
 #include "cloud_io.h"
 #include "cloud_viewer.h"
 #include "cloud_fitting.h"
 #include "cloud_registration.h"
 #include "cloud_processing.h"
+#include "common_use.h"
 
-std::string file_name_without_postfix(std::string & file_name);
-
-void load_file_to_display(std::string & folder, cloud_viewer * cv, float r = 0, float g = 255, float b = 0, float point_size = 4.0, size_t interval_time = 1000);
+// default parameters:
+// data/Armadillo_fine_registration_1.txt data/Armadillo_fine_registration_2.txt data/Armadillo_fine_registration_1_corase_matrix.txt data/icp_configuration.yaml icp_output
 
 int main(int argc, char *argv[])
 {
@@ -29,7 +27,7 @@ int main(int argc, char *argv[])
 			//<< "please see help with \"--help\" \n "
 			<< "This program needs two point cloud as input, a configruation file and a output folder\n"
 			<< "you can enter more parameters like\n"
-			<< "xxx.exe <reading_point_cloud.txt> <reference_point_cloud.txt> <configruation_file.yaml> <icp_output> \n";
+			<< "xxx.exe <reading_point_cloud.txt> <reference_point_cloud.txt> <initial_matrix.txt> <configruation_file.yaml> <icp_output> \n";
 
 		return -1;
 	}
@@ -37,6 +35,7 @@ int main(int argc, char *argv[])
 	std::string
 		reading_point_cloud_file_name, 
 		reference_point_cloud_file_name, 
+		initial_marix_file_name,
 		configuration_file_name,
 		icp_output_folder;
 
@@ -44,14 +43,22 @@ int main(int argc, char *argv[])
 
 	reference_point_cloud_file_name = std::string(argv[2]);
 
-	configuration_file_name = std::string(argv[3]);
+	initial_marix_file_name = std::string(argv[3]);
+
+	configuration_file_name = std::string(argv[4]);
 	
-	icp_output_folder = std::string(argv[4]);
+	icp_output_folder = std::string(argv[5]);
 
 	std::vector<point_3d> reading_point_cloud, reference_point_cloud;
 
+	// read reading point cloud from local file
 	load_point_cloud_txt(reading_point_cloud_file_name, reading_point_cloud, false);
 
+	Eigen::Matrix4f initial_matrix = read_matrix(initial_marix_file_name);
+
+	transform_points(reading_point_cloud, initial_matrix, reading_point_cloud);
+
+	// read reference point cloud from local file
 	load_point_cloud_txt(reference_point_cloud_file_name, reference_point_cloud, false);
 
 	std::cout
@@ -60,6 +67,8 @@ int main(int argc, char *argv[])
 		<< "read point cloud:\n\t" << reading_point_cloud_file_name << " point size:" << reading_point_cloud.size() << "\n"
 
 		<< "reference point cloud:\n\t" << reference_point_cloud_file_name << " point size:" << reference_point_cloud.size() << "\n"
+		
+		<< "initial matrix of reading poin cloud:\n\t" << initial_marix_file_name << "\n"
 
 		<< "configuration file for ICP algorithm:\n\t" << configuration_file_name << "\n"
 
@@ -102,76 +111,5 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-std::string file_name_without_postfix(std::string & file_name)
-{
-	size_t first_pos = file_name.find('/', 0), second_pos = file_name.find('.', 0);
-
-	if (second_pos > first_pos)
-	{
-		return file_name.substr(first_pos + 1, second_pos - first_pos - 1);
-	}
-	return file_name;
-}
-
-void load_file_to_display(std::string & folder, cloud_viewer * cv, float r, float g, float b, float point_size, size_t interval_time)
-{
-	size_t i = 0;
-
-	std::vector<std::vector<point_3d>> points_vec;
-
-	bool use_loaded_data = false;
-
-	size_t max_file_number = UINT_MAX;
-
-	while (true)
-	{
-		if (use_loaded_data == false)
-		{
-			std::string file_name = folder + "/" + "-reading-" + std::to_string(i) + ".vtk";
-
-			bool is_existed = std::filesystem::exists(file_name);
-
-			if (is_existed)
-			{
-				std::cout << "loaded " << file_name << "\n";
-
-				std::vector<point_3d> points;
-
-				load_point_cloud_vtk(file_name, points);
-
-				cv->update_reading_point_cloud(points, r, g, b, point_size);
-
-				points_vec.push_back(points);
-
-				std::this_thread::sleep_for(std::chrono::milliseconds(interval_time));
-
-				++i;
-			}
-			else
-			{
-				std::cout << "loaded all files, here are animation of the icp registration as below.\n";
-
-				use_loaded_data = true;
-
-				max_file_number = i;
-
-				i = 0;
-			}
-		}
-		else
-		{
-			cv->update_reading_point_cloud(points_vec[i], 0, 255, 0, 4);
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(interval_time));
-
-			++i;
-
-			if (i == max_file_number)
-			{
-				i = 0;
-			}
-		}
-	}
-}
 
 #endif // FINE_REGISTRATION

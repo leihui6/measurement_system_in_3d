@@ -3,6 +3,19 @@
 
 #include "cloud_geometry.h"
 
+struct TrVisitorType 
+{
+	template <typename Derived>
+	inline void operator() (float fraction, float best_LCP, const Eigen::MatrixBase<Derived>& transformation)
+	{
+		if (fraction >= 0)
+		{
+			std::cout << "done: " << (fraction * 100) << "% best " << best_LCP << "\n";
+		}
+	}
+	constexpr bool needsGlobalTransformation() const { return false; }
+};
+
 class cloud_registration
 {
 public:
