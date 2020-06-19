@@ -9,6 +9,10 @@
 
 #include "cloud_io.h"
 
+//#define CORASE_REGISTRATION
+//#define FINE_REGISTRATION
+//#define LABELING_POINTS
+
 extern void save_matrix(Eigen::Matrix4f & matrix, const std::string & file_name);
 
 extern Eigen::Matrix4f read_matrix(const std::string & file_name);

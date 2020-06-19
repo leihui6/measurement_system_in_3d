@@ -5,6 +5,8 @@ interface_command::interface_command(cloud_viewer * cloud_view_ptr)
 	dt(DT_EMPTY)
 {
 	m_cloud_view_ptr = cloud_view_ptr;
+
+	m_cloud_view_ptr->set_the_interface_command(this);
 }
 
 
@@ -40,7 +42,41 @@ void interface_command::run_itself()
 
 			break;
 		}
+		// points
 		else if (i_c == 'a')
+		{
+			clear_picked_points();
+
+			clear_shapes();
+
+			std::cout << "you choosed \"POINT\" type, please select the points in the scene" << std::endl;
+
+			cs = CS_SELECTING_POINTS;
+
+			dt = DT_POINT;
+
+			while (true)
+			{
+				print_menu();
+
+				std::cin >> i_c;
+
+				if (i_c == 'q')
+				{
+					cs = CS_NORMAL;
+
+					dt = DT_EMPTY;
+
+					m_cloud_view_ptr->save_points_to_vec(m_cloud_view_ptr->m_points, m_cloud_view_ptr->m_points_vec);
+
+					print_menu_in_steps(5);
+
+					break;
+				}
+			}
+		}
+		// line
+		else if (i_c == 'b')
 		{
 			clear_picked_points();
 
@@ -71,8 +107,9 @@ void interface_command::run_itself()
 					break;
 				}
 			}
-		}// end for a
-		else if (i_c == 'b')
+		}
+		// plane
+		else if (i_c == 'c')
 		{
 			clear_picked_points();
 
@@ -103,8 +140,9 @@ void interface_command::run_itself()
 					break;
 				}
 			}
-		}// end for b
-		else if (i_c == 'c')
+		}
+		// cylinder
+		else if (i_c == 'd')
 		{
 			clear_picked_points();
 
@@ -142,6 +180,12 @@ void interface_command::run_itself()
 		{
 			m_cloud_view_ptr->print_marked_info();
 		}
+		else if (i_c == 'e')
+		{
+			m_cloud_view_ptr->export_points();
+
+			std::cout << "exported done!\n";
+		}
 	}
 }
 
@@ -156,10 +200,12 @@ void interface_command::print_menu()
 	{
 		std::cout
 			<< "please choice the shape that you want to detect, press \"q\" to quit" << "\n"
-			<< "a) 3d line" << "\n"
-			<< "b) 3d plane" << "\n"
-			<< "c) 3d cylinder" << "\n"
+			<< "a) 3d point" << "\n"
+			<< "b) 3d line" << "\n"
+			<< "c) 3d plane" << "\n"
+			<< "d) 3d cylinder" << "\n"
 			<< "s) show all shapes marked" << "\n"
+			<< "e) export all marked points" << "\n"
 			<< "choose an option:";
 	}
 }
@@ -191,12 +237,17 @@ void interface_command::print_menu_in_steps(int step)
 	else if (step == 3)
 	{
 		std::cout
-			<< "quit marking line step.\n";
+			<< "quit marking the lines step.\n";
 	}
 	else if (step == 4)
 	{
 		std::cout
-			<< "quit marking plane step.\n";
+			<< "quit marking the planes step.\n";
+	}
+	else if (step == 5)
+	{
+		std::cout
+			<< "quit marking the points step.\n";
 	}
 }
 

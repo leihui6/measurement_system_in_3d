@@ -8,11 +8,18 @@ The purpose of this stage is to select a bunch of points that could represent th
 
 - The Computational Geometry Algorithms Library(CGAL) 5.0.2
 
-## Progress
+## Progress & Record
 
-- [x] fitting line & showing
-- [x] fitting plane & showing
-- [x] fitting cylinder & showing // TODO
+- [x] Fitting line & showing
+- [x] Fitting plane & showing
+- [x] Fitting cylinder & showing // TODO
+- [x] Supported export to file
+
+## Usage
+
+``` shell
+xxx.exe  <point_cloud> <output_folder>
+```
 
 ## Demo in each stage
 

@@ -566,9 +566,78 @@ void cloud_viewer::print_marked_info()
 {
 	std::cout
 		<< "here are information on marked shapes:\n"
+		<< "point shapes:" << m_points_vec.size() << "\n"
 		<< "line shapes:" << m_line_points_vec.size() << "\n"
 		<< "plane shapes:" << m_plane_points_vec.size() << "\n"
 		<< "cylinder shapes:" << m_cylinder_points_vec.size() << "\n";
+}
+
+void cloud_viewer::set_export_file_name(const std::string & efn)
+{
+	this->m_export_file_name = efn;
+}
+
+void cloud_viewer::export_points()
+{
+	std::ofstream point_file(m_export_file_name + "/point_marked.txt");
+
+	if (point_file.is_open())
+	{
+		for (size_t i = 0; i < m_points_vec.size(); ++i)
+		{
+			for (size_t j = 0; j < m_points_vec[i].size(); j++)
+			{
+				point_file << m_points_vec[i][j].x << " " << m_points_vec[i][j].y << " " << m_points_vec[i][j].z << "\n";
+			}
+			point_file << "#\n";
+		}
+		point_file.close();
+	}
+
+	std::ofstream line_file(m_export_file_name + "/line_marked.txt");
+
+	if (line_file.is_open())
+	{
+		for (size_t i = 0; i < m_line_points_vec.size(); ++i)
+		{
+			for (size_t j = 0; j < m_line_points_vec[i].size(); j++)
+			{
+				line_file << m_line_points_vec[i][j].x << " " << m_line_points_vec[i][j].y << " " << m_line_points_vec[i][j].z << "\n";
+			}
+			line_file << "#\n";
+		}
+		line_file.close();
+	}
+	
+	std::ofstream plane_file(m_export_file_name + "/plane_marked.txt");
+
+	if (plane_file.is_open())
+	{
+		for (size_t i = 0; i < m_plane_points_vec.size(); ++i)
+		{
+			for (size_t j = 0; j < m_plane_points_vec[i].size(); j++)
+			{
+				plane_file << m_plane_points_vec[i][j].x << " " << m_plane_points_vec[i][j].y << " " << m_plane_points_vec[i][j].z << "\n";
+			}
+			plane_file << "#\n";
+		}
+		plane_file.close();
+	}
+	
+	std::ofstream cylinder_file(m_export_file_name + "/cylinder_marked.txt");
+
+	if (cylinder_file.is_open())
+	{
+		for (size_t i = 0; i < m_plane_points_vec.size(); ++i)
+		{
+			for (size_t j = 0; j < m_plane_points_vec[i].size(); j++)
+			{
+				cylinder_file << m_plane_points_vec[i][j].x << " " << m_plane_points_vec[i][j].y << " " << m_plane_points_vec[i][j].z << "\n";
+			}
+			cylinder_file << "#\n";
+		}
+		cylinder_file.close();
+	}
 }
 
 void PickHandler::screen_to_world(osg::ref_ptr<osgViewer::View> viewer, osg::Vec3d & screen_point, osg::Vec3d & world)
@@ -662,7 +731,7 @@ void PickHandler::update_shapes()
 {
 	if (this->m_cloud_viewer->m_ic_ptr->cs == CS_QUIT)
 	{
-		std::cout << "shapes detection terminated by console\n";
+		std::cout << "shapes detection terminated by user\n";
 
 		return;
 	}
@@ -696,6 +765,10 @@ void PickHandler::update_shapes()
 		process_cylinder();
 
 		//std::cout << "cylinder model updated done " << std::endl;
+	}
+	else if(this->m_cloud_viewer->m_ic_ptr->dt == DT_POINT)
+	{
+		process_point();
 	}
 	else
 	{
@@ -918,6 +991,11 @@ void PickHandler::process_cylinder()
 
 	m_cloud_viewer->update_cylinder(center_p, radius, height, rotated_axis, rotated_angle, 0, 255, 0);
 	*/
+}
+
+void PickHandler::process_point()
+{
+	m_cloud_viewer->m_points = m_cloud_viewer->m_picked_points;
 }
 
 bool PickHandler::add_point_to_picked_vector(const point_3d & p)

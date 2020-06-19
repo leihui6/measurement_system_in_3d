@@ -11,6 +11,7 @@ class cloud_viewer;
 enum detected_type
 {
 	DT_EMPTY,
+	DT_POINT,
 	DT_LINE,
 	DT_PLANE,
 	DT_CYLINDER
@@ -57,6 +58,7 @@ private:
 	//	[2] for exit
 	// [3] for line quit 
 	// [4] for plane quit
+	// [5] for point quit
 	void print_menu_in_steps(int step);
 
 	void clear_picked_points();

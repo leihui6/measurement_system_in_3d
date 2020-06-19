@@ -63,6 +63,8 @@ private:
 
 	void process_cylinder();
 
+	void process_point();
+
 public:
 
 	// for showing
@@ -143,18 +145,26 @@ public:
 
 	void print_marked_info();
 
+	void set_export_file_name(const std::string & efn);
+
 public:
 	// interface command pointer, TODO: to be shared pointer
 	interface_command * m_ic_ptr;
 
 	cloud_fitting m_cf;
 
+	std::string m_export_file_name;
+
 	// update once picking, this is current points
+	std::vector<point_3d> m_points;
+	
 	std::vector<point_3d> m_line_points;
 
 	std::vector<point_3d> m_plane_points;
 
 	std::vector<point_3d> m_cylinder_points;
+
+	std::vector < std::vector<point_3d>> m_points_vec;
 
 	std::vector < std::vector<point_3d>> m_line_points_vec;
 
@@ -163,6 +173,8 @@ public:
 	std::vector < std::vector<point_3d>> m_cylinder_points_vec;
 
 	std::vector<point_3d> m_picked_points;
+
+	void export_points();
 
 private:
 	osg::ref_ptr<PickHandler> m_selector;
