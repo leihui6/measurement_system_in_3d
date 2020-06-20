@@ -10,10 +10,10 @@ The work flow of this system was shown as following. All steps will be implement
 - [x] [Rough registration](./rough_registration)
 - [x] [Fine registration](./fine_registration)
 - [ ] Searching the points to be measured in specified point cloud
-- [ ] [delay]Combining all components 
+- [ ] [delay]Combining all components
 - [ ] [delay]Making it across-platform including `Windows (windows 10)` and `Linux(Ubuntu *)`
 
-please use this tool ([click]([display_fine_and_coarse](./display_fine_and_coarse))) to visualize coarse and fine registration.
+please use this tool ([click](./display_fine_and_coarse))) to visualize coarse and fine registration.
 
 ## Compiler
 
@@ -31,7 +31,6 @@ Every step should has its dependencies libraries, also might require the whole l
 | CGAL 5.0.2  (The Computational Geometry Algorithms Library) | Associating with core geometric calculation     | [link](https://www.cgal.org/)   | rquire compile| |
 | OpenGR(A C++ library for 3D Global Registration)  |  Implement Super4PCS for coarse registration  | [link](https://github.com/STORM-IRIT/OpenGR) or [link](https://storm-irit.github.io/OpenGR/index.html)   | header-only | |
 | libpointmatcher with its `yaml-cpp-pm`   | Implement  ICP  for fine registration    | [link](https://github.com/ethz-asl/libpointmatcher)   | require compile | [modified version](https://github.com/Gltina/libpointmatcher) that support export matrix per iteration instead of completed vtk-file when setting `dumpReading`|
-| cxxopts  |  Parsing line command     |[link](https://github.com/jarro2783/cxxopts)  | header-only | |
 
 ## Demo
 
