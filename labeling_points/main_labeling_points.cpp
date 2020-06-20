@@ -6,7 +6,7 @@
 *	Date: 06/06/2020
 */
 
-#define LABELING_POINTS
+//#define LABELING_POINTS
 #ifdef LABELING_POINTS
 
 #include "cloud_io.h"

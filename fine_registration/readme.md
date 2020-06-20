@@ -2,7 +2,7 @@
 
 The goal of this stage is to fine registration two point cloud based on Iterative Closest Point (ICP), which mainly implemented by `libpointmatcher`. And it can visualize the process of ICP registration using OSG.
 
-Thanks to `libpointmatcher,` which did an entirely meaningful work in this field, it also helps me learn iterative closest point algorithm deeply.
+Thanks to `libpointmatcher` which did an entirely meaningful work in this field, it also helps me learn iterative closest point algorithm deeply. I also modified the [`libpointmatcher`](https://github.com/Gltina/libpointmatcher) to support export matrix into file during iteration process.
 
 ## Requirement
 
@@ -11,15 +11,17 @@ Thanks to `libpointmatcher,` which did an entirely meaningful work in this field
 
 ## Demo
 
+visulization function was removed in this stage, please see it in [this](./../display_fine_and_coarse/).
+
 ![demo](./demo/fine_registration.gif)
 
 ## Usage
 
 ``` shell
-xxx.exe point_cloud_1 point_cloud_2 initial_matrix.txt data/icp_configuration.yaml output_folder
+fine_registration.exe <point_cloud_1> <point_cloud_2> <initial_matrix.txt> <data/icp_configuration.yaml> <output_folder>
 ```
 
-The final transformed point cloud will be saved with name called `$(point_cloud_2)(without postfix)+"_transformed.txt"` in `$(output_folder)`
+The matrix in icp process will be saved in `output/` with `-matrix-$(iteartion_number).txt`.
 
 ## Configuration file for ICP alogrithm
 

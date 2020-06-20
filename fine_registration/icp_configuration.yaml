@@ -31,14 +31,14 @@ inspector:
 #    dumpStats: 1
 # NullInspector
   VTKFileInspector:
-    baseFileName: ./icp_output/
+    baseFileName: ./output/
     #dumpIterationInfo: 1
     #writeBinary: 1
     dumpReading: 1
     # dumpDataLinks: 1
-    dumpReference: 1
+    # dumpReference: 1
 
 logger:
-  FileLogger:
-    infoFileName: ./icp_output/icp_log_file.log
-#  NullLogger
+#  FileLogger:
+#    infoFileName: ./output/icp_log_file.log
+  NullLogger

@@ -1,4 +1,4 @@
-# corase registration
+# coarse registration
 
 The purpose of this stage is to find a rough transformation between two point cloud using [4PCS](https://github.com/STORM-IRIT/OpenGR) , which is a global registration method.
 
@@ -9,10 +9,10 @@ The purpose of this stage is to find a rough transformation between two point cl
 ## Usage
 
 ``` shell
-
-xxx.exe  point_cloud_1 point_cloud_2 corase_matrix.txt
-
+./main_coarse_registration.exe  <point_cloud_1> <point_cloud_2> <output_folder>
 ```
+
+Note that the final matrix will be written in `output/coarse_matrix.txt`
 
 ## Parameters in 4PCS
 

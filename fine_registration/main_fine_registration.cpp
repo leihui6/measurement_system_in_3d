@@ -5,8 +5,7 @@
 *	Date: 06/06/2020
 */
 
-#define FINE_REGISTRATION
-
+//#define FINE_REGISTRATION
 #ifdef FINE_REGISTRATION
 
 #include "cloud_io.h"
@@ -17,7 +16,7 @@
 #include "common_use.h"
 
 // default parameters:
-// data/Armadillo_fine_registration_1.txt data/Armadillo_fine_registration_2.txt data/Armadillo_fine_registration_1_corase_matrix.txt data/icp_configuration.yaml icp_output
+// data/Armadillo_fine_registration_1.txt data/Armadillo_fine_registration_2.txt output/coarse_matrix.txt data/icp_configuration.yaml output
 
 int main(int argc, char *argv[])
 {
@@ -88,25 +87,6 @@ int main(int argc, char *argv[])
 
 	// matrix transforming reading point cloud to reference point cloud
 	std::cout << "fine registration matrix is:\n" << fine_ret_mat << "\n";
-
-	// apply for final tranformation on reading point cloud
-	transform_points(reading_point_cloud, fine_ret_mat, fine_transformed_point_cloud);
-
-	// save transformed reading point cloud with posefix "_transformed"
-	save_points(fine_transformed_point_cloud, icp_output_folder + "/" + file_name_without_postfix(reading_point_cloud_file_name) + "_transformed.txt");
-
-	cloud_viewer m_cloud_viewer("fine registration");
-
-	std::vector<point_3d> reference_points;
-
-	if (load_point_cloud_vtk(icp_output_folder + "/-reference-0.vtk", reference_points))
-	{
-		m_cloud_viewer.add_point_cloud_with_color(reference_points, 4.0, Eigen::Matrix4f::Identity(), 255, 0, 0);
-
-		boost::thread update_reading_thread(load_file_to_display, icp_output_folder, &m_cloud_viewer, 0, 255, 0, 4.0, 200);
-	}
-
-	m_cloud_viewer.display();
 
 	return 0;
 }

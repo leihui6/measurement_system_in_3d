@@ -58,7 +58,7 @@ void cloud_registration::coarse_registration(std::vector<point_3d>& readning_poi
 
 	logger.Log<gr::Utils::Verbose>("Score: ", score);
 
-	ret_mat.transposeInPlace();
+	//ret_mat.transposeInPlace();
 }
 
 void cloud_registration::fine_registration(std::vector<point_3d>& reading_points, std::vector<point_3d>& reference_points, const std::string & configuration_file_name, Eigen::Matrix4f &ret_mat)

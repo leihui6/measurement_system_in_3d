@@ -11,64 +11,70 @@ std::string file_name_without_postfix(std::string & file_name)
 	return file_name;
 }
 
-void load_file_to_display(std::string & folder, cloud_viewer * cv, float r, float g, float b, float point_size, size_t interval_time)
+bool is_exist(const std::string & file_name)
+{
+	return std::filesystem::exists(file_name);;
+}
+
+void load_file_to_vec(std::string & folder, std::vector<Eigen::Matrix4f> & m_vec)
 {
 	size_t i = 0;
 
-	std::vector<std::vector<point_3d>> points_vec;
-
-	bool use_loaded_data = false;
-
-	size_t max_file_number = UINT_MAX;
-
 	while (true)
 	{
-		if (use_loaded_data == false)
+		std::string file_name = folder + "/" + "-matrix-" + std::to_string(i) + ".txt";
+
+		if (is_exist(file_name))
 		{
-			std::string file_name = folder + "/" + "-reading-" + std::to_string(i) + ".vtk";
+			std::cout << "loaded " << file_name << "\n";
 
-			bool is_existed = std::filesystem::exists(file_name);
-
-			if (is_existed)
-			{
-				std::cout << "loaded " << file_name << "\n";
-
-				std::vector<point_3d> points;
-
-				load_point_cloud_vtk(file_name, points);
-
-				cv->update_reading_point_cloud(points, r, g, b, point_size);
-
-				points_vec.push_back(points);
-
-				std::this_thread::sleep_for(std::chrono::milliseconds(interval_time));
-
-				++i;
-			}
-			else
-			{
-				std::cout << "loaded all files, here are animation of the icp registration as below.\n";
-
-				use_loaded_data = true;
-
-				max_file_number = i;
-
-				i = 0;
-			}
+			m_vec.push_back(read_matrix(file_name));
 		}
 		else
 		{
-			cv->update_reading_point_cloud(points_vec[i], 0, 255, 0, 4);
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(interval_time));
-
-			++i;
-
-			if (i == max_file_number)
-			{
-				i = 0;
-			}
+			break;
 		}
+		++i;
+	}
+}
+
+void display_point_cloud_from_transformation_vec(cloud_viewer & cv, std::vector<point_3d>& reading_point_cloud, std::vector<Eigen::Matrix4f>& transformation_vec)
+{
+	// transformation_vec[1] is a identify matrix
+	std::swap(transformation_vec[0], transformation_vec[1]);
+
+	std::vector<std::vector<point_3d>> transformed_points;
+
+	for (size_t i = 2; i < transformation_vec.size(); ++i)
+	{
+		transformation_vec[i] = transformation_vec[i] * transformation_vec[1];
+	}
+
+	for (size_t i = 0; i < transformation_vec.size(); ++i)
+	{
+		std::vector<point_3d> t_points;
+
+		transform_points(reading_point_cloud, transformation_vec[i], t_points);
+
+		transformed_points.push_back(t_points);
+	}
+
+	size_t i = 0;
+
+	while (true)
+	{
+		cv.update_reading_point_cloud(transformed_points[i], 0, 255, 0, 4.0);
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+		if (i + 1 == transformation_vec.size())
+		{
+			i = 0;
+
+			continue;
+		}
+
+		i++;
 	}
 }
 
@@ -112,5 +118,6 @@ Eigen::Matrix4f read_matrix(const std::string & file_name)
 		std::cerr << "file (" << file_name << ") doesn't exist\n";
 	}
 	file.close();
+	m.transposeInPlace();
 	return m;
 }

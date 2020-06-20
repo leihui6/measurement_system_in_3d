@@ -9,16 +9,23 @@
 
 #include "cloud_io.h"
 
-//#define CORASE_REGISTRATION
-//#define FINE_REGISTRATION
-//#define LABELING_POINTS
-
+// write one matrix(4x4) to file
 extern void save_matrix(Eigen::Matrix4f & matrix, const std::string & file_name);
 
+// read one matrix(4x4) from file
 extern Eigen::Matrix4f read_matrix(const std::string & file_name);
 
+// cut '/' and postfix context of file name string 
 extern std::string file_name_without_postfix(std::string & file_name);
 
-extern void load_file_to_display(std::string & folder, cloud_viewer * cv, float r = 0, float g = 255, float b = 0, float point_size = 4.0, size_t interval_time = 1000);
+// check if the file exists
+extern bool is_exist(const std::string & file_name);
+
+// load more file containing matrix into a vector consists of Eigen::Matrix4f
+extern void load_file_to_vec(std::string & folder, std::vector<Eigen::Matrix4f> & m_vec);
+
+// display point cloud in osg repeatly with mroe matrices
+extern void display_point_cloud_from_transformation_vec(cloud_viewer & cv, std::vector<point_3d> & reading_point_cloud, std::vector<Eigen::Matrix4f> &transformation_vec);
+
 
 #endif // COMMON_USE
