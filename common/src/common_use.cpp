@@ -78,6 +78,49 @@ void display_point_cloud_from_transformation_vec(cloud_viewer & cv, std::vector<
 	}
 }
 
+void read_points(std::vector<std::vector<point_3d>>& points_vec, const std::string & file_name)
+{
+	if (!is_exist(file_name))
+	{
+		std::cerr << "file (" << file_name << ") doesn't exist.\n";
+		return;
+	}
+
+	std::ifstream ifile(file_name);
+	std::string line;
+
+	std::vector<point_3d> points;
+
+	while (std::getline(ifile, line))
+	{
+		if (line.size() < 1)
+		{
+			continue;
+		}
+
+		if (line[0] == '#')
+		{
+			points_vec.push_back(points);
+
+			points.clear();
+
+			continue;
+		}
+
+		std::stringstream s(line);
+
+		float value[3] = { 0,0,0 };
+
+		for (size_t i = 0; i < 3; i++)
+		{
+			s >> value[i];
+		}
+		points.push_back(point_3d(value[0], value[2], value[2]));
+	}
+
+	ifile.close();
+}
+
 void save_matrix(Eigen::Matrix4f & matrix, const std::string & file_name)
 {
 	std::ofstream file(file_name);

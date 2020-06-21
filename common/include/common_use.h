@@ -27,5 +27,7 @@ extern void load_file_to_vec(std::string & folder, std::vector<Eigen::Matrix4f> 
 // display point cloud in osg repeatly with mroe matrices
 extern void display_point_cloud_from_transformation_vec(cloud_viewer & cv, std::vector<point_3d> & reading_point_cloud, std::vector<Eigen::Matrix4f> &transformation_vec);
 
+// read points from file that containing many points and spilted by '#'
+extern void read_points(std::vector<std::vector<point_3d>> & points_vec, const std::string & file_name);
 
 #endif // COMMON_USE
