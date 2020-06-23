@@ -78,7 +78,7 @@ void display_point_cloud_from_transformation_vec(cloud_viewer & cv, std::vector<
 	}
 }
 
-void read_points(std::vector<std::vector<point_3d>>& points_vec, const std::string & file_name)
+void read_points(std::map<std::string, std::vector<point_3d>> & points_map, const std::string & file_name)
 {
 	if (!is_exist(file_name))
 	{
@@ -100,7 +100,7 @@ void read_points(std::vector<std::vector<point_3d>>& points_vec, const std::stri
 
 		if (line[0] == '#')
 		{
-			points_vec.push_back(points);
+			points_map[line.substr(1, line.size() - 1)] = points;
 
 			points.clear();
 

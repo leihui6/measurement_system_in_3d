@@ -18,76 +18,9 @@ struct measurement_value
 	bool is_valid[3];
 };
 
-class measurement
-{
-public:
-	measurement();
+extern void measure(std::string & points_1_name, std::string & points_2_name, std::map<std::string, std::vector<point_3d>> & _m, measurement_value & mv);
 
-	~measurement();
-
-	virtual void measure(std::vector<point_3d> & points_1, std::vector<point_3d> & points_2, measurement_value & mv) = 0;
-
-};
-
-class point_to_point_measurement : measurement
-{
-public:
-	virtual void measure(std::vector<point_3d> & points_1, std::vector<point_3d> & points_2, measurement_value & mv);
-};
-
-class point_to_line_measurement : measurement
-{
-public:
-	virtual void measure(std::vector<point_3d> & points_1, std::vector<point_3d> & points_2, measurement_value & mv);
-};
-
-class point_to_plane_measurement : measurement
-{
-public:
-	virtual void measure(std::vector<point_3d> & points_1, std::vector<point_3d> & points_2, measurement_value & mv);
-};
-
-class point_to_cylinder_measurement : measurement
-{
-public:
-	virtual void measure(std::vector<point_3d> & points_1, std::vector<point_3d> & points_2, measurement_value & mv);
-};
-
-class line_to_line_measurement : measurement
-{
-public:
-	virtual void measure(std::vector<point_3d> & points_1, std::vector<point_3d> & points_2, measurement_value & mv);
-};
-
-class line_to_plane_measurement : measurement
-{
-public:
-	virtual void measure(std::vector<point_3d> & points_1, std::vector<point_3d> & points_2, measurement_value & mv);
-};
-
-class line_to_cylinder_measurement : measurement
-{
-public:
-	virtual void measure(std::vector<point_3d> & points_1, std::vector<point_3d> & points_2, measurement_value & mv);
-};
-
-class plane_to_plane_measurement : measurement
-{
-public:
-	virtual void measure(std::vector<point_3d> & points_1, std::vector<point_3d> & points_2, measurement_value & mv);
-};
-
-class plane_to_cylinder_measurement : measurement
-{
-public:
-	virtual void measure(std::vector<point_3d> & points_1, std::vector<point_3d> & points_2, measurement_value & mv);
-};
-
-class cylinder_to_cylinder_measurement : measurement
-{
-public:
-	virtual void measure(std::vector<point_3d> & points_1, std::vector<point_3d> & points_2, measurement_value & mv);
-};
+extern void analyze_points(std::vector<size_t> & order_1, std::vector<size_t> & order_2, std::vector<point_3d> points_1, std::vector<point_3d> points_1, measurement_value & mv);
 
 #endif // !MEASUREMENT
 

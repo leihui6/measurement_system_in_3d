@@ -64,14 +64,15 @@ int main(int argc, char *argv[])
 
 	transform_points(reading_point_cloud, final_matrix, reading_point_cloud);
 
-	std::vector<std::vector<point_3d>> point_points_vec, line_points_vec, plane_points_vec, cylinder_points_vec;
+	std::map<std::string, std::vector<point_3d>> marked_points_map;
 
-	read_points(point_points_vec, output_folder + "/point_marked.txt");
-	read_points(line_points_vec, output_folder + "/line_marked.txt");
-	read_points(plane_points_vec, output_folder + "/plane_marked.txt");
-	read_points(cylinder_points_vec, output_folder + "/cylinder_marked.txt");
+	read_points(marked_points_map, output_folder + "/marked_points.txt");
 
+	std::string points_1 = "line_0", points_2 = "point_0";
 
+	measurement_value msv;
+
+	measure(points_1, points_2, marked_points_map, msv);
 
 	return 0;
 }

@@ -40,10 +40,12 @@ public:
 	void run();
 
 	// detected_type
-	detected_type dt;
+	detected_type m_dt;
 
 	// command_status
-	command_status cs;
+	command_status m_cs;
+
+	std::vector<size_t> marked_points_count;
 
 	//command_status_for_cylinder cs_for_cylinder;
 
@@ -52,14 +54,8 @@ private:
 
 	void print_menu();
 
-	// [0-2] for cylinder 
-	//	[0] for menu in cylinder step
-	//	[1] for alerting
-	//	[2] for exit
-	// [3] for line quit 
-	// [4] for plane quit
-	// [5] for point quit
-	void print_menu_in_steps(int step);
+	// [0] means beginning [1] means ending
+	void print_menu_in_steps(detected_type dt, int flag);
 
 	void clear_picked_points();
 
@@ -68,6 +64,11 @@ private:
 	void print_marked_info();
 
 	cloud_viewer * m_cloud_view_ptr;
+
+	void input_marked_name(std::string & marked_name, const std::string  & default_name);
+
+	void process_specific_type(detected_type _dt);
+
 };
  
 #endif // INTERFACE_COMMAND

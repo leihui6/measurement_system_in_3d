@@ -141,7 +141,7 @@ public:
 
 	void clear_shapes();
 
-	void save_points_to_vec(std::vector<point_3d> & points, std::vector < std::vector<point_3d>> & vec);
+	void save_points_to_vec(std::vector<point_3d> & points, const std::string & marked_name, std::map < std::string, std::vector<point_3d>> & _m);
 
 	void print_marked_info();
 
@@ -164,13 +164,7 @@ public:
 
 	std::vector<point_3d> m_cylinder_points;
 
-	std::vector < std::vector<point_3d>> m_points_vec;
-
-	std::vector < std::vector<point_3d>> m_line_points_vec;
-
-	std::vector < std::vector<point_3d>> m_plane_points_vec;
-
-	std::vector < std::vector<point_3d>> m_cylinder_points_vec;
+	std::map <std::string, std::vector<point_3d>> m_marked_points_vec;
 
 	std::vector<point_3d> m_picked_points;
 
