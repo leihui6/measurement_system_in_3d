@@ -178,7 +178,7 @@ void interface_command::input_marked_name(std::string & marked_name, const std::
 
 	while (true)
 	{
-		std::cout << "please enter the name of these points: (default:" << default_name << ")";
+		std::cout << "please enter the name of these points:(default:" << default_name << ")";
 
 		int c;
 		while ((c = getchar()) != '\n' && c != EOF) {}

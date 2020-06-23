@@ -345,7 +345,7 @@ void cloud_viewer::update_line(std::vector<point_3d> & line_segment, float r, fl
 
 	points_to_geometry_node(line_segment, geometry, r, g, b);
 	
-	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES, 0, line_segment.size()));
+	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINE_STRIP, 0, line_segment.size()));
 	
 	osg::ref_ptr<osg::LineWidth> lw = new osg::LineWidth(line_width);
 	
@@ -782,10 +782,26 @@ void PickHandler::process_line()
 
 	m_cloud_viewer->m_cf.fitting_line_3d_linear_least_squares(m_cloud_viewer->m_picked_points, line_func);
 	
-	point_3d min_p, max_p;
+	point_3d sphere_center;
 
-	max_min_point_3d_vec(m_cloud_viewer->m_picked_points, min_p, max_p);
+	float sphere_r;
 
+	centroid_from_points(m_cloud_viewer->m_picked_points, sphere_center);
+
+	//mean_distance_from_point_to_points(m_cloud_viewer->m_picked_points, sphere_center, sphere_r);
+
+	longgest_distance_from_point_to_points(m_cloud_viewer->m_picked_points, sphere_center, sphere_r);
+
+	std::vector<point_3d> real_line_segment(2);
+
+	intersection_line_to_sphere(line_func, sphere_center, sphere_r, real_line_segment[0], real_line_segment[1]);
+
+	m_cloud_viewer->update_line(real_line_segment, 0, 255, 0, 10);
+
+	//std::vector<point_3d> cube_vertexs;
+
+	//m_cloud_viewer->update_testing_point_cloud(cube_vertexs, 0, 255, 0, 10);
+	/*
 	std::vector<float>t_b, t_e;
 
 	man_min_t_line_function(line_func, min_p, max_p, t_b, t_e);
@@ -841,6 +857,7 @@ void PickHandler::process_line()
 	real_line_segment[1].set_xyz(line_func.x + line_func.n * real_t_e, line_func.y + line_func.m * real_t_e, line_func.z + line_func.l * real_t_e);
 
 	m_cloud_viewer->update_line(real_line_segment, 0, 255, 0, 10);
+	*/
 }
 
 void PickHandler::process_plane(plane_func_3d & plane_func)

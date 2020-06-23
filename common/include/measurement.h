@@ -20,7 +20,7 @@ struct measurement_value
 
 extern void measure(std::string & points_1_name, std::string & points_2_name, std::map<std::string, std::vector<point_3d>> & _m, measurement_value & mv);
 
-extern void analyze_points(std::vector<size_t> & order_1, std::vector<size_t> & order_2, std::vector<point_3d> points_1, std::vector<point_3d> points_1, measurement_value & mv);
+extern void analyze_points(std::vector<size_t> & order_1, std::vector<size_t> & order_2, std::vector<point_3d> points_1, std::vector<point_3d> points_2, measurement_value & mv);
 
 #endif // !MEASUREMENT
 

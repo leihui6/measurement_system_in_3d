@@ -168,10 +168,10 @@ void max_min_point_3d_vec(std::vector<point_3d> & points, point_3d & min_p, poin
 void max_min_value_array(std::vector<float> & vec, float & min_value, float & max_value);
 
 // calculate the min and max t in line function, min_max_t[0-2]: min_t; min_max[3-5]:max_t
-void man_min_t_line_function(line_func_3d & line_func, point_3d & min_p, point_3d & max_p, std::vector<float>& min_t, std::vector<float> &max_t);
+//void man_min_t_line_function(line_func_3d & line_func, point_3d & min_p, point_3d & max_p, std::vector<float>& min_t, std::vector<float> &max_t);
 
 // calculate the appropriate t that could let point be closer to target point
-void get_appropriate_t(line_func_3d & line_func, std::vector<float> t_vec, point_3d target_point, float & real_t);
+//void get_appropriate_t(line_func_3d & line_func, std::vector<float> t_vec, point_3d target_point, float & real_t);
 
 // void get_distance_points_to_plane(std::vector<float> & points, plane_func_3d & plane_func, std::vector<float> & dis_to_plane);
 
@@ -201,6 +201,8 @@ bool is_parallel_vector(const Eigen::Vector3f & v1, const Eigen::Vector3f & v2);
 
 void plane_function_from_three_points(point_3d & A, point_3d & B, point_3d & C, plane_func_3d & plane_func);
 
+void intersection_line_to_sphere(line_func_3d & line_func, point_3d & sphere_center, float & sphere_r, point_3d & res_p1, point_3d & res_p2);
+
 void points_on_plane(std::vector<point_3d>& points, std::vector<point_3d>& points_on_plane, plane_func_3d & plane_func, float distance_threshold);
 
 void points_on_cylinder(std::vector<point_3d>& points, std::vector<point_3d>& points_on_cylinder, cylinder_func & _cylinder_func, float specifical_distance, float threshold);
@@ -213,6 +215,8 @@ void standard_deviation(std::vector<float> & vec, float & deviation);
 void probability_close_to_value(std::vector<float> & vec, float specifical_value, float threshold, float & probability);
 
 void mean_distance_from_point_to_points(std::vector<point_3d>& points, point_3d & point, float & mean_distance);
+
+void longgest_distance_from_point_to_points(std::vector<point_3d>& points, point_3d & point, float & longgest_distance);
 
 void angle_between_two_vector_3d(Eigen::Vector3f & p1, Eigen::Vector3f & p2, float & angle);
 

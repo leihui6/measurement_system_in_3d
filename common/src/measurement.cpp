@@ -50,14 +50,14 @@ void measure(std::string & points_1_name, std::string & points_2_name, std::map<
 		lower[3] = 1;
 	}
 
-	analyze_points(upper, lower, _m[points_1_name], _m[, points_2_name], mv);
+	analyze_points(upper, lower, _m[points_1_name], _m[points_2_name], mv);
 }
 
-void analyze_points(std::vector<size_t>& order_1, std::vector<size_t>& order_2, std::vector<point_3d> points_1, std::vector<point_3d> points_1, measurement_value & mv)
+void analyze_points(std::vector<size_t>& order_1, std::vector<size_t>& order_2, std::vector<point_3d> points_1, std::vector<point_3d> points_2, measurement_value & mv)
 {
 	size_t first_type, second_type;
 
-	for (size_t i = 0; i < order_1; ++i)
+	for (size_t i = 0; i < order_1.size(); ++i)
 	{
 		if (order_1[i] != 0)
 		{

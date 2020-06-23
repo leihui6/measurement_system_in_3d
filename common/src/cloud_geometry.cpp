@@ -372,49 +372,49 @@ void max_min_value_array(std::vector<float> & vec, float & min_value, float & ma
 	max_value = *min_max.second;
 }
 
-void man_min_t_line_function(line_func_3d & line_func, point_3d & min_p, point_3d & max_p, std::vector<float> &min_t, std::vector<float> &max_t)
-{
-	min_t.resize(3, 0);
-
-	max_t.resize(3, 0);
-
-	min_t[0] = (min_p.x - line_func.x) / line_func.n;
-
-	min_t[1] = (min_p.y - line_func.y) / line_func.m;
-
-	min_t[2] = (min_p.z - line_func.z) / line_func.l;
-
-	max_t[0] = (max_p.x - line_func.x) / line_func.n;
-
-	max_t[1] = (max_p.y - line_func.y) / line_func.m;
-
-	max_t[2] = (max_p.z - line_func.z) / line_func.l;
-}
-void get_appropriate_t(line_func_3d & line_func, std::vector<float> t_vec, point_3d target_point, float & real_t)
-{
-	float min_dis = FLT_MAX;
-
-	for (size_t i = 0; i < t_vec.size(); ++i)
-	{
-		point_3d tmp_p;
-
-		tmp_p.set_xyz(
-			line_func.x + t_vec[i] * line_func.n,
-			line_func.y + t_vec[i] * line_func.m, 
-			line_func.z + t_vec[i] * line_func.l);
-
-		float dis = 0.0;
-
-		distance_point_to_point(tmp_p, target_point, dis);
-
-		if (dis < min_dis)
-		{
-			min_dis = dis;
-
-			real_t = t_vec[i];
-		}
-	}
-}
+//void man_min_t_line_function(line_func_3d & line_func, point_3d & min_p, point_3d & max_p, std::vector<float> &min_t, std::vector<float> &max_t)
+//{
+//	min_t.resize(3, 0);
+//
+//	max_t.resize(3, 0);
+//
+//	min_t[0] = (min_p.x - line_func.x) / line_func.n;
+//
+//	min_t[1] = (min_p.y - line_func.y) / line_func.m;
+//
+//	min_t[2] = (min_p.z - line_func.z) / line_func.l;
+//
+//	max_t[0] = (max_p.x - line_func.x) / line_func.n;
+//
+//	max_t[1] = (max_p.y - line_func.y) / line_func.m;
+//
+//	max_t[2] = (max_p.z - line_func.z) / line_func.l;
+//}
+//void get_appropriate_t(line_func_3d & line_func, std::vector<float> t_vec, point_3d target_point, float & real_t)
+//{
+//	float min_dis = FLT_MAX;
+//
+//	for (size_t i = 0; i < t_vec.size(); ++i)
+//	{
+//		point_3d tmp_p;
+//
+//		tmp_p.set_xyz(
+//			line_func.x + t_vec[i] * line_func.n,
+//			line_func.y + t_vec[i] * line_func.m, 
+//			line_func.z + t_vec[i] * line_func.l);
+//
+//		float dis = 0.0;
+//
+//		distance_point_to_point(tmp_p, target_point, dis);
+//
+//		if (dis < min_dis)
+//		{
+//			min_dis = dis;
+//
+//			real_t = t_vec[i];
+//		}
+//	}
+//}
 void transform_points(std::vector<point_3d>& points, Eigen::Matrix4f & t, std::vector<point_3d>& ret_points)
 {
 	if (&points == &ret_points)
@@ -665,6 +665,28 @@ void plane_function_from_three_points(point_3d & A, point_3d & B, point_3d & C, 
 	plane_func.set_abcd(N[0], N[1], N[2], d);
 }
 
+void intersection_line_to_sphere(line_func_3d & line_func, point_3d & sphere_center, float & sphere_r, point_3d & res_p1, point_3d & res_p2)
+{
+	point_3d pedal_point_on_line;
+
+	pedalpoint_point_to_line(sphere_center, line_func, pedal_point_on_line);
+
+	float distance_to_center;
+
+	distance_point_to_point(pedal_point_on_line, sphere_center, distance_to_center);
+
+	if (distance_to_center > sphere_r)
+	{
+		return;
+	}
+
+	float distance_on_line = sqrt(sphere_r * sphere_r - distance_to_center * distance_to_center);
+
+	Eigen::Vector3f line_dir(line_func.n, line_func.m, line_func.l);
+
+	point_along_with_vector_within_dis(pedal_point_on_line, line_dir, res_p1, res_p2, distance_on_line);
+}
+
 void points_on_plane(std::vector<point_3d>& points, std::vector<point_3d>& points_on_plane, plane_func_3d & plane_func, float distance_threshold)
 {
 	points_on_plane.clear();
@@ -771,6 +793,23 @@ void mean_distance_from_point_to_points(std::vector<point_3d>& points, point_3d 
 	}
 
 	mean_distance = (sum / points.size());
+}
+
+void longgest_distance_from_point_to_points(std::vector<point_3d>& points, point_3d & point, float & longgest_distance)
+{
+	longgest_distance = FLT_MIN;
+
+	for (size_t i = 0; i < points.size(); ++i)
+	{
+		float dis = 0.0;
+
+		distance_point_to_point(points[i], point, dis);
+
+		if (dis > longgest_distance)
+		{
+			longgest_distance = dis;
+		}
+	}
 }
 
 void angle_between_two_vector_3d(point_3d & p1, point_3d & p2, float & angle)
