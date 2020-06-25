@@ -16,7 +16,9 @@ class kd_tree
 {
 public:
 
-	kd_tree(point_cloud & m_point_cloud);
+	kd_tree(std::vector<point_3d> & points);
+
+	~kd_tree();
 
 	size_t search_neighbors_knn(size_t k, point_3d & p, std::vector<size_t> &ret_index, std::vector<float> &out_dist_sqr);
 
@@ -24,13 +26,19 @@ public:
 
 	void search_points_correspondence(std::vector<point_3d> & points, kd_tree & other_kd_tree, std::vector<point_3d> & other_points);
 
+	void search_points_correspondence(std::vector<point_3d>& points, std::vector<point_3d>& found_points);
+
+	void search_points_correspondence(std::vector<point_3d>& points);
+	
 	void get_point(size_t i, point_3d &p);
 
 	point_3d get_point(size_t i);
 
 private:
 
-	kd_tree_t m_kd_tree_t;
+	point_cloud m_pc;
+
+	kd_tree_t * m_kd_tree_t;
 
 	void points_to_poincloud(std::vector<point_3d>& points, point_cloud & m_point_cloud);
 };

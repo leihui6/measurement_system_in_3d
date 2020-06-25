@@ -59,6 +59,15 @@ void point_3d::do_transform(Eigen::Matrix4f & t, point_3d & p)
 	p.set_xyz(tmp(0, 0), tmp(1, 0), tmp(2, 0));
 }
 
+void point_3d::do_transform(Eigen::Matrix4f & t)
+{
+	Eigen::Vector4f tmp(x, y, z, 1);
+
+	tmp = t * tmp;
+
+	this->set_xyz(tmp(0, 0), tmp(1, 0), tmp(2, 0));
+}
+
 point_3d & point_3d::operator=(const point_3d & p)
 {
 	if (this != &p)

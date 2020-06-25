@@ -1,7 +1,7 @@
 /*
-*	The purpose of this program is to implement the fine registration
+*	The purpose of this program is to visualize the process of coarse-to-fine stage.
 *
-*	Author: Leihui Li
+*	Author: leihui.li#outlook.com
 *	Date: 06/06/2020
 */
 
@@ -10,23 +10,17 @@
 
 #include "cloud_io.h"
 #include "cloud_viewer.h"
-#include "cloud_fitting.h"
-#include "cloud_registration.h"
-#include "cloud_processing.h"
 #include "common_use.h"
-
-// default parameters:
-// data/Armadillo_fine_registration_1.txt data/Armadillo_fine_registration_2.txt output
 
 int main(int argc, char *argv[])
 {
 	if (argc < 4)
 	{
 		std::cerr
-			//<< "please see help with \"--help\" \n "
-			<< "This program needs two point cloud as input, a configruation file and a output folder\n"
-			<< "you can enter more parameters like\n"
-			<< "xxx.exe <reading_point_cloud.txt> <reference_point_cloud.txt> <output> \n";
+			<< "<reading_point_cloud>:\n\t" << "reading point cloud, which will be aligned to reference point cloud\n"
+			<< "<reference_point_cloud>:\n\t" << "reading point cloud will be aligned to this point cloud\n"
+			<< "<output_folder>:\n\t" << "this program will load \"coarse_matrix\" and \"fine_matrix\" from this folder \n"
+			<< "like: program_name <reading_point_cloud> <reference_point_cloud> <output_folder> \n";
 
 		return -1;
 	}
@@ -63,18 +57,11 @@ int main(int argc, char *argv[])
 
 	// load coarse registration matrix
 	std::string coarse_registration_matrix = output_folder + "/" + "coarse_matrix.txt";
-
-	if (is_exist(coarse_registration_matrix))
-	{
-		transformation_vec.push_back(read_matrix(coarse_registration_matrix));
-	}
-	else
-	{
-		std::cerr << coarse_registration_matrix << " doesn't exist.\n";
-	}
+	read_matrix(coarse_registration_matrix, transformation_vec);
 
 	// load fine registration matrics
-	load_file_to_vec(output_folder, transformation_vec);
+	std::string fine_registration_matrix = output_folder + "/" + "fine_matrix.txt";
+	read_matrix(fine_registration_matrix, transformation_vec);
 
 	// display all transformation repeatly
 	cloud_viewer m_cloud_viewer("process of coarse and fine registration");

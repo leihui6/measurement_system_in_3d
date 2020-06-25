@@ -16,28 +16,6 @@ bool is_exist(const std::string & file_name)
 	return std::filesystem::exists(file_name);;
 }
 
-void load_file_to_vec(std::string & folder, std::vector<Eigen::Matrix4f> & m_vec)
-{
-	size_t i = 0;
-
-	while (true)
-	{
-		std::string file_name = folder + "/" + "-matrix-" + std::to_string(i) + ".txt";
-
-		if (is_exist(file_name))
-		{
-			std::cout << "loaded " << file_name << "\n";
-
-			m_vec.push_back(read_matrix(file_name));
-		}
-		else
-		{
-			break;
-		}
-		++i;
-	}
-}
-
 void display_point_cloud_from_transformation_vec(cloud_viewer & cv, std::vector<point_3d>& reading_point_cloud, std::vector<Eigen::Matrix4f>& transformation_vec)
 {
 	// transformation_vec[1] is a identify matrix
@@ -65,7 +43,7 @@ void display_point_cloud_from_transformation_vec(cloud_viewer & cv, std::vector<
 	{
 		cv.update_reading_point_cloud(transformed_points[i], 0, 255, 0, 4.0);
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		std::this_thread::sleep_for(std::chrono::milliseconds(123));
 
 		if (i + 1 == transformation_vec.size())
 		{
@@ -115,10 +93,80 @@ void read_points(std::map<std::string, std::vector<point_3d>> & points_map, cons
 		{
 			s >> value[i];
 		}
-		points.push_back(point_3d(value[0], value[2], value[2]));
+		points.push_back(point_3d(value[0], value[1], value[2]));
 	}
 
 	ifile.close();
+}
+
+void export_marked_points(std::map<std::string, std::vector<point_3d>>& marked_points, const std::string & export_file_name)
+{
+	std::map <std::string, std::vector<point_3d>>::iterator it;
+
+	std::ofstream point_file(export_file_name);
+
+	if (point_file.is_open())
+	{
+		for (it = marked_points.begin(); it != marked_points.end(); it++)
+		{
+			std::vector<point_3d> &ps = it->second;
+
+			for (size_t j = 0; j < ps.size(); j++)
+			{
+				point_file << ps[j].x << " " << ps[j].y << " " << ps[j].z << "\n";
+			}
+			point_file << "#" << it->first << "\n";
+		}
+		point_file.close();
+	}
+}
+
+void transform_marked_points(std::map<std::string, std::vector<point_3d>>& marked_points, Eigen::Matrix4f & m)
+{
+	std::map<std::string, std::vector<point_3d>>::iterator it;
+
+	for (it = marked_points.begin(); it != marked_points.end(); it++)
+	{
+		std::vector<point_3d> & ptsv = it->second;
+
+		for (size_t i = 0; i < ptsv.size(); ++i)
+		{
+			ptsv[i].do_transform(m);
+		}
+	}
+}
+
+void read_file_as_map(const std::string & file_name, std::map<std::string, float> & str_flt_map)
+{
+	std::ifstream ifile(file_name);
+
+	if (!ifile.is_open())
+	{
+		return;
+	}
+
+	std::string line;
+
+	while (std::getline(ifile, line))
+	{
+		if (line.empty()) break;
+
+		if (line[0] == '#') continue;
+
+		size_t divided_flag = line.find(":");
+
+		if (divided_flag == std::string::npos) continue;
+
+		std::string key_ = line.substr(0, divided_flag);
+
+		divided_flag++;
+
+		float value_ = 0.0f;;
+
+		value_ = std::stof(line.substr(divided_flag, line.size() - divided_flag));
+
+		str_flt_map[key_] = value_;
+	}
 }
 
 void save_matrix(Eigen::Matrix4f & matrix, const std::string & file_name)
@@ -127,40 +175,58 @@ void save_matrix(Eigen::Matrix4f & matrix, const std::string & file_name)
 
 	if (file.is_open())
 	{
-		file << matrix << '\n';
+		file << matrix << "\n#\n";
 	}
 
 	file.close();
 }
 
-Eigen::Matrix4f read_matrix(const std::string & file_name)
+void read_matrix(const std::string & file_name, std::vector<Eigen::Matrix4f> & m_v)
 {
-	Eigen::Matrix4f m;
-	std::ifstream file(file_name);
-	if (file.is_open())
+	std::ifstream ifile(file_name);
+
+	if (!ifile.is_open())
 	{
-		std::vector<float> matrix_value;
+		std::cerr << "file (" << file_name << ") doesn't exist\n";
+		return;
+	}
+	std::string line;
+
+	std::vector<float> matrix_value;
+
+	while (std::getline(ifile, line))
+	{
+		if (line.empty())
+		{
+			continue;
+		}
+
+		if (line[0] == '#')
+		{
+			continue;
+		}
+
+		std::stringstream s(line);
+
 		float tmp;
 
-		while (file >> tmp)
+		for (size_t i = 0; i < 4; ++i)
 		{
+			s >> tmp;
 			matrix_value.push_back(tmp);
 		}
+
 		if (matrix_value.size() == 16)
 		{
 			Eigen::Matrix4f m_tmp(matrix_value.data());
-			m = m_tmp;
-		}
-		else
-		{
-			std::cerr << "cannot read matrix from file:file error\n";
+
+			m_tmp.transposeInPlace();
+
+			m_v.push_back(m_tmp);
+
+			matrix_value.clear();
 		}
 	}
-	else
-	{
-		std::cerr << "file (" << file_name << ") doesn't exist\n";
-	}
-	file.close();
-	m.transposeInPlace();
-	return m;
+
+	ifile.close();
 }

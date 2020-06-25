@@ -2,7 +2,7 @@
 *	The purpose of this program is to load a standard 
 *	and label the points representing the shapes to be deteced.
 *
-*	Author: Leihui Li
+*	Author: leihui.li#outlook.com
 *	Date: 06/06/2020
 */
 
@@ -11,23 +11,16 @@
 
 #include "cloud_io.h"
 #include "cloud_viewer.h"
-#include "cloud_search.h"
-#include "cloud_fitting.h"
-#include "cloud_registration.h"
-#include "cloud_processing.h"
 #include "interface_command.h"
-
-// default parameters
-// points_withnxyz_k_part.txt output
 
 int main(int argc, char *argv[])
 {
 	if (argc < 3)
 	{
 		std::cerr
-			//<< " please see help with \"--help\" " << std::endl;
-			<< "This program needs two parameters including a standard point cloud and a output folder.\n"
-			<< "like: program_name <point_cloud> <output_folder>\n";
+			<< "<standard_point_cloud>:\n\t" << "standard(reference) point cloud, you will pick up points based on this point cloud\n"
+			<< "<output_folder>:\n\t" << "marked points will be exported to this folder\n"
+			<< "like: program_name <standard_point_cloud> <output_folder>\n";
 		return -1;
 	}
 

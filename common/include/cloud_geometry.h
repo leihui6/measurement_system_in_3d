@@ -45,7 +45,11 @@ struct point_3d
 
 	void to_eigen_vector4f(Eigen::Vector4f & vector4f_p);
 
+	// execute transformation to the other point
 	void do_transform(Eigen::Matrix4f & t, point_3d & p);
+
+	// execute transformation to itself
+	void do_transform(Eigen::Matrix4f & t);
 
 	friend std::ostream & operator << (std::ostream & os, const point_3d & p);
 
@@ -100,6 +104,13 @@ struct cylinder_func
 // as nanoflann required
 struct point_cloud
 {
+	point_cloud() {}
+
+	point_cloud(std::vector<point_3d> & _pts)
+	{
+		this->pts = _pts;
+	}
+
 	std::vector<point_3d>  pts;
 
 	// Must return the number of data points

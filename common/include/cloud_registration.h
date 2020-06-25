@@ -2,6 +2,7 @@
 #define CLOUD_REGISTRATION_H
 
 #include "cloud_geometry.h"
+#include "common_use.h"
 
 struct TrVisitorType 
 {
@@ -28,7 +29,7 @@ public:
 	result matrix should be applied to points2
 	points21>points2
 	*/
-	void coarse_registration(std::vector<point_3d> & points1, std::vector<point_3d> &points2, Eigen::Matrix4f & ret_mat);
+	void coarse_registration(std::vector<point_3d> & points1, std::vector<point_3d> &points2, Eigen::Matrix4f & ret_mat, const std::string & coarse_configuration);
 
 	//! TODO, create a custom ICP algorithm
 	/*

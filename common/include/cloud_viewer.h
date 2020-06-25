@@ -23,7 +23,7 @@
 #include <osgUtil/DelaunayTriangulator> 
 #include <osgGA/TrackballManipulator>
 
-
+#include "common_use.h"
 #include "interface_command.h"
 #include "cloud_fitting.h"
 #include "cloud_geometry.h"

@@ -39,7 +39,7 @@ bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapt
 	// do nothing 
 	if (pick_status == 0)
 	{
-		if (viewer)
+		if (viewer && m_cloud_viewer->get_target_points())
 		{
 			bool is_clicked = get_picked_point(viewer, ea.getX(), ea.getY(), pp);
 
@@ -53,7 +53,7 @@ bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapt
 		return false;
 	}
 
-	if (viewer)
+	if (viewer && m_cloud_viewer->get_target_points())
 	{
 		bool is_clicked = get_picked_point(viewer, ea.getX(), ea.getY(), pp);
 
@@ -132,7 +132,7 @@ bool PickHandler::get_picked_point(osg::ref_ptr< osgViewer::View> viewer, float 
 cloud_viewer::cloud_viewer(const std::string & window_name)
 	: m_root(new osg::Group),
 	m_viewer(new osgViewer::Viewer),
-	m_target_points_ptr(new std::vector<point_3d>()),
+	m_target_points_ptr(nullptr),
 	m_ic_ptr(nullptr)
 {
 	// create a display window and initialize the camera 
@@ -603,24 +603,7 @@ void cloud_viewer::set_export_file_name(const std::string & efn)
 
 void cloud_viewer::export_points()
 {
-	std::map <std::string, std::vector<point_3d>>::iterator it;
-
-	std::ofstream point_file(m_export_file_name + "/marked_points.txt");
-
-	if (point_file.is_open())
-	{
-		for (it = m_marked_points_vec.begin(); it != m_marked_points_vec.end(); it++)
-		{
-			std::vector<point_3d> &ps = it->second;
-
-			for (size_t j = 0; j < ps.size(); j++)
-			{
-				point_file << ps[j].x << " " << ps[j].y << " " << ps[j].z << "\n";
-			}
-			point_file << "#" << it->first << "\n";
-		}
-		point_file.close();
-	}
+	export_marked_points(m_marked_points_vec, m_export_file_name + "/marked_points.txt");
 }
 
 void PickHandler::screen_to_world(osg::ref_ptr<osgViewer::View> viewer, osg::Vec3d & screen_point, osg::Vec3d & world)
@@ -657,6 +640,11 @@ bool PickHandler::calc_intersection_between_ray_and_points(const line_func_3d & 
 	std::vector<float> distance_vec;
 
 	std::vector<point_3d> * target_points = m_cloud_viewer->get_target_points();
+
+	if (!target_points)
+	{
+		return false;
+	}
 
 	distance_points_to_line(*target_points, _line_func_3d, distance_vec);
 
@@ -712,6 +700,11 @@ bool PickHandler::calc_intersection_between_ray_and_points(const line_func_3d & 
 
 void PickHandler::update_shapes()
 {
+	if (!this->m_cloud_viewer->m_ic_ptr)
+	{
+		return;
+	}
+
 	if (this->m_cloud_viewer->m_ic_ptr->m_cs == CS_QUIT)
 	{
 		std::cout << "shapes detection terminated by user\n";

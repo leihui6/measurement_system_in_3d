@@ -14,7 +14,7 @@ cloud_registration::~cloud_registration()
 {
 }
 
-void cloud_registration::coarse_registration(std::vector<point_3d>& readning_point_cloud, std::vector<point_3d>& reference_point_cloud, Eigen::Matrix4f & ret_mat)
+void cloud_registration::coarse_registration(std::vector<point_3d>& readning_point_cloud, std::vector<point_3d>& reference_point_cloud, Eigen::Matrix4f & ret_mat, const std::string & coarse_configuration)
 {
 	using MatcherType = gr::Match4pcsBase<gr::FunctorSuper4PCS, gr::Point3D<float>, TrVisitorType, gr::AdaptivePointFilter, gr::AdaptivePointFilter::Options>;
 
@@ -27,21 +27,19 @@ void cloud_registration::coarse_registration(std::vector<point_3d>& readning_poi
 	// Our matcher.
 	MatcherType::OptionsType options;
 
-	constexpr gr::Utils::LogLevel loglvl = gr::Utils::Verbose;
+	std::map<std::string, float> str_flt_map;
+	read_file_as_map(coarse_configuration, str_flt_map);
 
-	gr::Utils::Logger logger(loglvl);
-
-	MatcherType matcher(options, logger);
-
-	gr::UniformDistSampler<gr::Point3D<float> > sampler;
-
-	TrVisitorType visitor;
-
-	options.configureOverlap(double(1.0));
+	options.configureOverlap(str_flt_map["overlap_estimation"]);
+	options.delta					= str_flt_map["delta"];
+	options.sample_size				= str_flt_map["sample_size"];
+	options.max_normal_difference	= str_flt_map["max_normal_difference"];
+	options.max_color_distance		= str_flt_map["max_color_distance"];
+	options.max_time_seconds		= str_flt_map["max_time_seconds"];
 
 	std::cout
 		<< "getOverlapEstimation:" << options.getOverlapEstimation() << "\n"
-		// delta, used to compute the LCP between the two models
+		// delta, used to compute the Largest Common Pointset (LCP) between the two models
 		<< "options.delta:" << options.delta << "\n"
 		// number of samples used for the matching
 		<< "options.sample_size:" << options.sample_size << "\n"
@@ -51,6 +49,16 @@ void cloud_registration::coarse_registration(std::vector<point_3d>& readning_poi
 		<< "options.max_color_distance:" << options.max_color_distance << "\n"
 		// maximum computation time in seconds
 		<< "options.max_time_seconds:" << options.max_time_seconds << "\n";
+
+	constexpr gr::Utils::LogLevel loglvl = gr::Utils::Verbose;
+
+	gr::Utils::Logger logger(loglvl);
+
+	MatcherType matcher(options, logger);
+
+	gr::UniformDistSampler<gr::Point3D<float> > sampler;
+
+	TrVisitorType visitor;
 
 	typename gr::Point3D<float>::Scalar score = 0;
 
