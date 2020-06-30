@@ -32,6 +32,24 @@ class cloud_viewer;
 
 class interface_command;
 
+struct viewer_parameters
+{
+	viewer_parameters() :
+		picking_range(0.1),
+		background_color(0, 0, 0, 1),
+		point_size(4.0),
+		point_color(1, 1, 1, 1)
+	{}
+	// default:0.1
+	float picking_range;
+	// default: 0 0 0 1
+	osg::Vec4 background_color;
+	// default: 4.0
+	float point_size;
+	// default: 
+	osg::Vec4 point_color;
+};
+
 //! pick point on point cloud
 class PickHandler : public osgGA::GUIEventHandler
 {
@@ -67,9 +85,6 @@ private:
 
 public:
 
-	// for showing
-	plane_func_3d m_cylinder_plane_func;
-
 	point_3d m_centriod_point_on_bottom;
 
 	cylinder_func m_cylinder_func;
@@ -88,16 +103,16 @@ class cloud_viewer
 public:
 	cloud_viewer(const std::string & window_name);
 
+	cloud_viewer(const std::string & window_name, std::map<std::string, std::string>& config_parameters);
+
 	~cloud_viewer();
 
 	// create a node by point_3d with color
-	osg::ref_ptr<osg::Geode> add_point_cloud_with_color(std::vector<point_3d> & points, float point_size = 4,
-		Eigen::Matrix4f transform = Eigen::Matrix4f::Identity(),
+	osg::ref_ptr<osg::Geode> add_point_cloud_with_color(std::vector<point_3d> & points, Eigen::Matrix4f transform = Eigen::Matrix4f::Identity(),
 		float r = 0, float g = 0, float b = 0);
 
 	// create a node by point_3d without color
-	osg::ref_ptr<osg::Geode> add_point_cloud(std::vector<point_3d> & points, float point_size = 4,
-		Eigen::Matrix4f transform = Eigen::Matrix4f::Identity());
+	osg::ref_ptr<osg::Geode> add_point_cloud(std::vector<point_3d> & points, Eigen::Matrix4f transform = Eigen::Matrix4f::Identity());
 
 	void create_display_window(const std::string & window_name);
 
@@ -107,7 +122,7 @@ public:
 
 	void update_plane(std::vector<point_3d> & plane_square, float r = 0, float g = 0, float b = 0);
 
-	void update_cylinder(point_3d & center_p, float radius, float height, Eigen::Vector3f & rotated_axis, float rotated_angle, float r, float g, float b);
+	void update_cylinder(cylinder_func &cf, Eigen::Vector3f & rotated_axis, float rotated_angle, float r, float g, float b, float w);
 
 	void update_cylinder(std::vector<point_3d>& cylinder_points, float r = 0, float g = 0, float b = 0, float point_size = 4.0);
 
@@ -203,7 +218,12 @@ private:
 	// below could be deleted after releasing
 	// for testing
 	osg::ref_ptr<osg::Geode> m_geode_testing;
+
+	void initialize_geode();
+
+private:
+	viewer_parameters m_viewer_parameters;
+	// load parameters from file
+	void load_parameters(std::map<std::string, std::string> & parameters);
 };
 #endif // !cloud_viewer_H
-
-

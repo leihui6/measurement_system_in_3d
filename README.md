@@ -4,7 +4,7 @@ This is my final project of master's degree,  that is *Automatic Industrial Meas
 
 ## Steps
 
-The work flow of this system was shown as following. 
+The work flow of this system was shown as follows.
 
 - [x] [Labeling/Marking a set of points representing the shape to be detected](./labeling_points)
 - [x] [Coarse registration](./coarse_registration)
@@ -30,56 +30,6 @@ Each step should has its dependencies libraries, also might require the whole li
 | CGAL 5.0.2  (The Computational Geometry Algorithms Library) | Associating with core geometric calculation     | [link](https://www.cgal.org/)   | rquire compile| |
 | OpenGR(A C++ library for 3D Global Registration)  |  Implement Super4PCS for coarse registration  | [link](https://github.com/STORM-IRIT/OpenGR) or [link](https://storm-irit.github.io/OpenGR/index.html)   | header-only | |
 | libpointmatcher with its `yaml-cpp-pm`   | Implement  ICP  for fine registration    | [link](https://github.com/ethz-asl/libpointmatcher)   | require compile | [modified version](https://github.com/Gltina/libpointmatcher) that support export matrix per iteration instead of completed vtk-file when setting `dumpReading`|
-
-## Usage
-
-### Running 
-
-These command and its parameters can be used to verify the function of each program:
-
-In labeling points stage:
-
-`labeling_points.exe reference_point_cloud output`
-
-In coarse stage:
-
-`coarse.exepoint_cloud_1 point_cloud_2 4pcs_configuration.txt output`
-
-In fine stage:
-
-`fine.exepoint_cloud_1 point_cloud_2 output icp_configuration.yaml output`
-
-[optional] Visualize coarse-to-fine stage:
-
-`visulization.exe point_cloud_1 point_cloud_2 output`
-
-In searching points stage:
-
-`searching.exe data/test_reading_point_cloud.txt output`
-
-### File structure
-
-``` shell
-│  coarse_registration.exe
-│  fine_registration.exe
-│  labeling_points.exe
-│  mark_points.bat
-│  searching_points.exe
-│  units_test.bat
-│  visualization_coarse_to_fine_stage.exe
-│
-├─data
-│      4pcs_configuration.txt
-│      icp_configuration.yaml
-│      <test_reading_point_cloud.txt>
-│     <test_reference_point_cloud.txt>
-│
-└─output
-        coarse_matrix.txt
-        fine_matrix.txt
-        marked_points.txt
-        marked_points_searched.txt
-```
 
 ## Demo
 

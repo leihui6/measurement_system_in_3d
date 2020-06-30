@@ -50,6 +50,11 @@ void point_3d::to_eigen_vector4f(Eigen::Vector4f & vector4f_p)
 	vector4f_p(3, 0) = 1;
 }
 
+Eigen::Vector3f point_3d::get_vector3f()
+{
+	return Eigen::Vector3f(this->x, this->y, this->z);
+}
+
 void point_3d::do_transform(Eigen::Matrix4f & t, point_3d & p)
 {
 	Eigen::Vector4f tmp(x, y, z, 1);
@@ -79,6 +84,24 @@ point_3d & point_3d::operator=(const point_3d & p)
 	return *this;
 }
 
+point_3d point_3d::operator+(const point_3d & p)
+{
+	point_3d tp;
+
+	tp.set_xyz(this->x + p.x, this->y + p.y, this->z + p.z);
+
+	return tp;
+}
+
+point_3d point_3d::operator/(const float num)
+{
+	point_3d tp;
+
+	tp.set_xyz(this->x / num, this->y / num, this->z / num);
+
+	return tp;
+}
+
 std::ostream & operator << (std::ostream & os, const point_3d & p)
 {
 	std::cout
@@ -90,35 +113,45 @@ std::ostream & operator << (std::ostream & os, const point_3d & p)
 }
 
 line_func_3d::line_func_3d()
-	:x(0), y(0), z(0),
-	n(0), m(0), l(0)
+	:origin(),
+	direction()
 {
 
 }
 
 void line_func_3d::set_xyz(float x, float y, float z)
 {
-	this->x = x;
-	this->y = y;
-	this->z = z;
+	this->origin[0] = x;
+	this->origin[1] = y;
+	this->origin[2] = z;
 }
 
 void line_func_3d::set_nml(float n, float m, float l)
 {
-	this->n = n;
-	this->m = m;
-	this->l = l;
+	this->direction[0] = n;
+	this->direction[1] = m;
+	this->direction[2] = l;
 }
 
-point_3d line_func_3d::get_point()
+point_3d line_func_3d::get_origin_point_3d()
 {
-	return point_3d(this->x, this->y, this->z);
+	return point_3d(origin[0], origin[1], origin[2]);
 }
 
-point_3d line_func_3d::get_normal()
+point_3d line_func_3d::get_direction_point_3d()
 {
-	return point_3d(this->n, this->m, this->l);
+	return point_3d(direction[0], direction[1], direction[2]);
 }
+
+//Eigen::Vector3f line_func_3d::direction()
+//{
+//	return Eigen::Vector3f(this->n, this->m, this->l);
+//}
+//
+//Eigen::Vector3f line_func_3d::origin_point()
+//{
+//	return Eigen::Vector3f(this->x, this->y, this->z);
+//}
 
 plane_func_3d::plane_func_3d()
 	: a(0), b(0), c(0), d(0)
@@ -134,15 +167,15 @@ void plane_func_3d::set_abcd(float a, float b, float c, float d)
 	this->d = d;
 }
 
-void plane_func_3d::get_normal(point_3d & normal)
-{
-	normal.x = this->a;
-	normal.y = this->b;
-	normal.z = this->c;
-}
+//Eigen::Vector3f plane_func_3d::direction()
+//{
+//	return Eigen::Vector3f(this->a, this->b, this->c);
+//}
 
 cylinder_func::cylinder_func()
-	: r(0)
+	: radius(0),
+	height(0),
+	axis()
 {
 
 }
@@ -273,11 +306,11 @@ void cylinder_func_to_osg_structure(std::vector<point_3d>& points, cylinder_func
 	{
 		point_3d pedal_point;
 
-		pedalpoint_point_to_line(points[i], cl.m_line_func, pedal_point);
+		pedalpoint_point_to_line(points[i], cl.axis, pedal_point);
 
 		float dis = 0.0;
 
-		distance_point_to_point(pedal_point, cl.m_line_func.get_point(), dis);
+		distance_point_to_point(pedal_point, cl.axis.get_origin_point_3d(), dis);
 
 		if (dis > max_distance)
 		{
@@ -287,9 +320,9 @@ void cylinder_func_to_osg_structure(std::vector<point_3d>& points, cylinder_func
 		}
 	}
 
-	center_p = cl.m_line_func.get_point();
+	center_p = cl.axis.get_origin_point_3d();
 
-	radius = cl.r;
+	radius = cl.radius;
 }
 
 void points_to_geometry_node(std::vector<point_3d>& points, osg::ref_ptr<osg::Geometry> geometry, float r, float g, float b)
@@ -451,12 +484,12 @@ void transform_points(std::vector<point_3d>& points, Eigen::Matrix4f & t, std::v
 void pedalpoint_point_to_line(const point_3d & point, const line_func_3d & _line_func_3d, point_3d & pedalpoint)
 {
 	float
-		x0 = _line_func_3d.x,
-		y0 = _line_func_3d.y,
-		z0 = _line_func_3d.z,
-		n = _line_func_3d.n,
-		m = _line_func_3d.m,
-		l = _line_func_3d.l,
+		x0 = _line_func_3d.origin[0],
+		y0 = _line_func_3d.origin[1],
+		z0 = _line_func_3d.origin[2],
+		n = _line_func_3d.direction[0],
+		m = _line_func_3d.direction[1],
+		l = _line_func_3d.direction[2],
 		x1 = point.x,
 		y1 = point.y,
 		z1 = point.z;
@@ -691,9 +724,7 @@ void intersection_line_to_sphere(line_func_3d & line_func, point_3d & sphere_cen
 
 	float distance_on_line = sqrt(sphere_r * sphere_r - distance_to_center * distance_to_center);
 
-	Eigen::Vector3f line_dir(line_func.n, line_func.m, line_func.l);
-
-	point_along_with_vector_within_dis(pedal_point_on_line, line_dir, res_p1, res_p2, distance_on_line);
+	point_along_with_vector_within_dis(pedal_point_on_line, line_func.direction, res_p1, res_p2, distance_on_line);
 }
 
 void points_on_plane(std::vector<point_3d>& points, std::vector<point_3d>& points_on_plane, plane_func_3d & plane_func, float distance_threshold)
@@ -713,7 +744,7 @@ void points_on_plane(std::vector<point_3d>& points, std::vector<point_3d>& point
 	}
 }
 
-void points_on_cylinder(std::vector<point_3d>& points, std::vector<point_3d>& points_on_cylinder, cylinder_func & _cylinder_func, float specifical_distance, float threshold)
+void points_on_cylinder(std::vector<point_3d>& points, std::vector<point_3d>& points_on_cylinder, cylinder_func & _cylinder_func, float threshold)
 {
 	points_on_cylinder.clear();
 
@@ -723,12 +754,29 @@ void points_on_cylinder(std::vector<point_3d>& points, std::vector<point_3d>& po
 	{
 		float dis_to_line = 0.0;
 
-		distance_point_to_line(points[i], _cylinder_func.m_line_func, dis_to_line);
+		distance_point_to_line(points[i], _cylinder_func.axis, dis_to_line);
 
-		if (fabs(dis_to_line - specifical_distance) < threshold)
+		if (fabs(dis_to_line - _cylinder_func.radius) < threshold)
 		{
 			points_on_cylinder.push_back(points[i]);
 		}
+	}
+}
+
+void points_on_plane_circle(std::vector<point_3d>& points, std::vector<point_3d>& points_on_plane_circle, plane_func_3d & plane_func, point_3d & circle_center, float circle_r, float threshold_on_plane, float threshold_in_circle)
+{
+	for (size_t i = 0; i < points.size(); ++i)
+	{
+		float on_plane, in_circle;
+
+		distance_point_to_plane(points[i], plane_func, on_plane);
+
+		distance_point_to_point(points[i], circle_center, in_circle);
+
+		in_circle = fabs(in_circle - circle_r);
+
+		if ((in_circle < threshold_in_circle) && (on_plane < threshold_on_plane))
+			points_on_plane_circle.push_back(points[i]);
 	}
 }
 
@@ -821,7 +869,7 @@ void longgest_distance_from_point_to_points(std::vector<point_3d>& points, point
 	}
 }
 
-void angle_between_two_vector_3d(point_3d & p1, point_3d & p2, float & angle)
+void angle_between_two_vector_3d(point_3d p1, point_3d p2, float & angle)
 {
 	Eigen::Vector3f ep1(p1.x, p1.y, p1.z), ep2(p2.x, p2.y, p2.z);
 
@@ -833,7 +881,41 @@ void angle_between_two_vector_3d(point_3d & p1, point_3d & p2, float & angle)
 	angle = acos(dot_value / sqrt(lenSq1 * lenSq2));
 }
 
-void angle_between_two_vector_3d(Eigen::Vector3f & p1, Eigen::Vector3f & p2, float & angle)
+bool is_in_range_of_two_points(point_3d & p, point_3d & p1, point_3d & p2)
+{
+	float
+		x[2] = { p1.x,p2.x },
+		y[2] = { p1.y,p2.y },
+		z[2] = { p1.z,p2.z };
+
+	if (p1.x > p2.x)
+	{
+		x[0] = p2.x;
+		x[1] = p1.x;
+	}
+	if (p1.y > p2.y)
+	{
+		y[0] = p2.y;
+		y[1] = p1.y;
+	}
+	if (p1.z > p2.z)
+	{
+		z[0] = p2.z;
+		z[1] = p1.z;
+	}
+
+	if (
+		p.x < x[1] && p.x > x[0] &&
+		p.y < y[1] && p.y > y[0] &&
+		p.z < z[1] && p.z > z[0])
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void angle_between_two_vector_3d(Eigen::Vector3f p1, Eigen::Vector3f p2, float & angle)
 {
 	float
 		dot_value = p1.dot(p2),

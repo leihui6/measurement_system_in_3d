@@ -45,6 +45,8 @@ struct point_3d
 
 	void to_eigen_vector4f(Eigen::Vector4f & vector4f_p);
 
+	Eigen::Vector3f get_vector3f();
+
 	// execute transformation to the other point
 	void do_transform(Eigen::Matrix4f & t, point_3d & p);
 
@@ -54,6 +56,8 @@ struct point_3d
 	friend std::ostream & operator << (std::ostream & os, const point_3d & p);
 
 	point_3d & operator = (const point_3d & p);
+	point_3d operator + (const point_3d & p);
+	point_3d operator / (const float num);
 
 	float x, y, z;
 
@@ -72,13 +76,15 @@ struct line_func_3d
 	
 	void set_nml(float n, float m, float l);
 	
-	point_3d get_point();
+	point_3d get_origin_point_3d();
 
-	point_3d get_normal();
+	point_3d get_direction_point_3d();
 
-	float n, m, l;
+	//float x, y, z;
+	Eigen::Vector3f origin;
 
-	float x, y, z;
+	//float n, m, l;
+	Eigen::Vector3f direction;
 };
 
 struct plane_func_3d
@@ -87,7 +93,13 @@ struct plane_func_3d
 
 	void set_abcd(float a, float b, float c, float d);
 
-	void get_normal(point_3d & normal);
+	//void get_normal(point_3d & normal);
+
+	template <typename T>
+	T direction()
+	{
+		return T(this->a, this->b, this->c);
+	}
 
 	float a, b, c, d;
 };
@@ -96,9 +108,11 @@ struct cylinder_func
 {
 	cylinder_func();
 
-	line_func_3d m_line_func;
+	line_func_3d axis;
 
-	float r;
+	float radius;
+
+	float height;
 };
 
 // as nanoflann required
@@ -216,7 +230,9 @@ void intersection_line_to_sphere(line_func_3d & line_func, point_3d & sphere_cen
 
 void points_on_plane(std::vector<point_3d>& points, std::vector<point_3d>& points_on_plane, plane_func_3d & plane_func, float distance_threshold);
 
-void points_on_cylinder(std::vector<point_3d>& points, std::vector<point_3d>& points_on_cylinder, cylinder_func & _cylinder_func, float specifical_distance, float threshold);
+void points_on_cylinder(std::vector<point_3d>& points, std::vector<point_3d>& points_on_cylinder, cylinder_func & _cylinder_func, float threshold);
+
+void points_on_plane_circle(std::vector<point_3d>& points, std::vector<point_3d>& points_on_plane_circle, plane_func_3d & plane_func, point_3d & circle_center, float circle_r, float threshold_on_plane = 0.1f, float threshold_in_circle = 0.1f);
 
 void centroid_from_points(std::vector<point_3d>& points, point_3d & centroid_point);
 
@@ -229,8 +245,10 @@ void mean_distance_from_point_to_points(std::vector<point_3d>& points, point_3d 
 
 void longgest_distance_from_point_to_points(std::vector<point_3d>& points, point_3d & point, float & longgest_distance);
 
-void angle_between_two_vector_3d(Eigen::Vector3f & p1, Eigen::Vector3f & p2, float & angle);
+void angle_between_two_vector_3d(Eigen::Vector3f p1, Eigen::Vector3f p2, float & angle);
 
-void angle_between_two_vector_3d(point_3d & p1, point_3d & p2, float & angle);
+void angle_between_two_vector_3d(point_3d p1, point_3d p2, float & angle);
+
+bool is_in_range_of_two_points(point_3d &p, point_3d &p1, point_3d &p2);
 
 #endif // !CLOUD_POINT_H

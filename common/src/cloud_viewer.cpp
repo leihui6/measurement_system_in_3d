@@ -81,12 +81,12 @@ bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapt
 			{
 				if (remove_point_from_picked_vector(pp))
 				{
-					std::cout << "removed done" << std::endl;
+					//std::cout << "removed done" << std::endl;
 				}
 			}
 			else
 			{
-				std::cout << "No points clicked can be cancelled, please be closer to the point" << std::endl;
+				//std::cout << "No points clicked can be cancelled, please be closer to the point" << std::endl;
 			}
 		}
 
@@ -129,6 +129,23 @@ bool PickHandler::get_picked_point(osg::ref_ptr< osgViewer::View> viewer, float 
 	return calc_intersection_between_ray_and_points(_line_func_3d, to_point_3d(eye), p, 0.1);
 }
 
+cloud_viewer::cloud_viewer(const std::string & window_name, std::map<std::string, std::string>& config_parameters)
+	: m_root(new osg::Group),
+	m_viewer(new osgViewer::Viewer),
+	m_target_points_ptr(nullptr),
+	m_ic_ptr(nullptr)
+{
+	// create a display window and initialize the camera 
+	create_display_window(window_name);
+
+	// set the handler that controls the selection operation
+	m_selector = new PickHandler(this);
+
+	initialize_geode();
+
+	load_parameters(config_parameters);
+}
+
 cloud_viewer::cloud_viewer(const std::string & window_name)
 	: m_root(new osg::Group),
 	m_viewer(new osgViewer::Viewer),
@@ -141,28 +158,7 @@ cloud_viewer::cloud_viewer(const std::string & window_name)
 	// set the handler that controls the selection operation
 	m_selector = new PickHandler(this);
 
-	// add a empty selected set, it will be replaced after selecting operation
-	std::vector<point_3d> empty_point_cloud;
-	m_geode_selected_point_cloud = add_point_cloud(empty_point_cloud);
-
-	// add a empty fitted line points
-	m_geode_fitted_line = add_point_cloud(empty_point_cloud);
-
-	// add a empty fitted plane points
-	m_geode_fitted_plane = add_point_cloud(empty_point_cloud);
-
-	// add a empty fitted cylinder points
-	m_geode_fitted_cylinder = add_point_cloud(empty_point_cloud);
-
-	// add a empty testing points
-	m_geode_testing = add_point_cloud(empty_point_cloud);
-
-	// add a empty hover points
-	m_geode_hover_point = add_point_cloud(empty_point_cloud);
-
-	m_geode_fitted_cylinder_centriod_point_on_bottom = add_point_cloud(empty_point_cloud);
-
-	m_geode_reading_point_cloud = add_point_cloud(empty_point_cloud);
+	initialize_geode();
 }
 
 cloud_viewer::~cloud_viewer()
@@ -170,7 +166,7 @@ cloud_viewer::~cloud_viewer()
 	// TODO: manage pointer in case of leaking of memory
 }
 
-osg::ref_ptr<osg::Geode> cloud_viewer::add_point_cloud_with_color(std::vector<point_3d> & points, float point_size, Eigen::Matrix4f t, float r, float g, float b)
+osg::ref_ptr<osg::Geode> cloud_viewer::add_point_cloud_with_color(std::vector<point_3d> & points, Eigen::Matrix4f t, float r, float g, float b)
 {
 	osg::ref_ptr<osg::Geode> geode = new osg::Geode();
 
@@ -181,7 +177,7 @@ osg::ref_ptr<osg::Geode> cloud_viewer::add_point_cloud_with_color(std::vector<po
 	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS, 0, points.size()));
 	osg::StateSet* stateSet = geometry->getOrCreateStateSet();
 	osg::Point* state_point_size = new osg::Point;
-	state_point_size->setSize(point_size);
+	state_point_size->setSize(m_viewer_parameters.point_size);
 	stateSet->setAttribute(state_point_size);
 
 	geode->addDrawable(geometry);
@@ -203,7 +199,7 @@ osg::ref_ptr<osg::Geode> cloud_viewer::add_point_cloud_with_color(std::vector<po
 	return geode;
 }
 
-osg::ref_ptr<osg::Geode> cloud_viewer::add_point_cloud(std::vector<point_3d> & points, float point_size, Eigen::Matrix4f t)
+osg::ref_ptr<osg::Geode> cloud_viewer::add_point_cloud(std::vector<point_3d> & points, Eigen::Matrix4f t)
 {
 	osg::ref_ptr<osg::Geode> geode = new osg::Geode();
 
@@ -214,7 +210,7 @@ osg::ref_ptr<osg::Geode> cloud_viewer::add_point_cloud(std::vector<point_3d> & p
 	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS, 0, points.size()));
 	osg::StateSet* stateSet = geometry->getOrCreateStateSet();
 	osg::Point* state_point_size = new osg::Point;
-	state_point_size->setSize(point_size);
+	state_point_size->setSize(m_viewer_parameters.point_size);
 	stateSet->setAttribute(state_point_size);
 
 	geode->addDrawable(geometry);
@@ -371,25 +367,38 @@ void cloud_viewer::update_plane(std::vector<point_3d> & plane_square,float r, fl
 
 	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::QUADS, 0, plane_square.size()));
 
-	//osg::ref_ptr<osg::LineWidth> lw = new osg::LineWidth(line_width);
-
-	//geometry->getOrCreateStateSet()->setAttribute(lw, osg::StateAttribute::ON);
-
 	m_geode_fitted_plane->setChild(0, geometry);
 }
 
-void cloud_viewer::update_cylinder(point_3d & center_p, float radius, float height, Eigen::Vector3f & rotated_axis, float rotated_angle, float r, float g, float b)
+void cloud_viewer::update_cylinder(cylinder_func &cf, Eigen::Vector3f & rotated_axis, float rotated_angle, float r, float g, float b, float w)
 {
 	osg::ref_ptr<osg::Geode> geode = new osg::Geode();
+
+	point_3d 
+		center_p = cf.axis.get_origin_point_3d(),
+		direction = cf.axis.get_direction_point_3d();
+
 
 	osg::ref_ptr<osg::ShapeDrawable> sd = new osg::ShapeDrawable(
 		new osg::Cylinder
 		(
 			osg::Vec3(0, 0, 0),
-			radius,
-			height
+			cf.radius,
+			cf.height
 		)
 	);
+
+	sd->setColor(osg::Vec4(r, g, b, w));
+	sd->setColorBinding(osg::Geometry::BIND_OVERALL);
+
+	osg::ref_ptr<osg::Vec3Array> normals = new osg::Vec3Array;
+	normals->push_back(osg::Vec3(direction.x, direction.y, direction.z));
+
+	sd->setNormalArray(normals);
+	sd->setNormalBinding(osg::Geometry::BIND_OVERALL);
+
+	osg::StateSet* stateset = sd->getOrCreateStateSet();
+	stateset->setMode(GL_BLEND, osg::StateAttribute::ON);
 
 	osg::Matrix mRotate(osg::Matrix::identity()), mTrans(osg::Matrix::identity());
 
@@ -570,19 +579,19 @@ void cloud_viewer::print_marked_info()
 
 	for (it = m_marked_points_vec.begin(); it != m_marked_points_vec.end(); it++)
 	{
-		if (it->first.find("point"))
+		if (it->first.find("point") != std::string::npos)
 		{
 			point_count++;
 		}
-		else if (it->first.find("line"))
+		else if (it->first.find("line") != std::string::npos)
 		{
 			line_count++;
 		}
-		else if (it->first.find("plane"))
+		else if (it->first.find("plane") != std::string::npos)
 		{
 			plane_count++;
 		}
-		else if (it->first.find("cylinder"))
+		else if (it->first.find("cylinder") != std::string::npos)
 		{
 			cylinder_count++;
 		}
@@ -604,6 +613,40 @@ void cloud_viewer::set_export_file_name(const std::string & efn)
 void cloud_viewer::export_points()
 {
 	export_marked_points(m_marked_points_vec, m_export_file_name + "/marked_points.txt");
+}
+
+void cloud_viewer::initialize_geode()
+{
+	// add a empty selected set, it will be replaced after selecting operation
+	std::vector<point_3d> empty_point_cloud;
+	m_geode_selected_point_cloud = add_point_cloud(empty_point_cloud);
+
+	// add a empty fitted line points
+	m_geode_fitted_line = add_point_cloud(empty_point_cloud);
+
+	// add a empty fitted plane points
+	m_geode_fitted_plane = add_point_cloud(empty_point_cloud);
+
+	// add a empty fitted cylinder points
+	m_geode_fitted_cylinder = add_point_cloud(empty_point_cloud);
+
+	// add a empty testing points
+	m_geode_testing = add_point_cloud(empty_point_cloud);
+
+	// add a empty hover points
+	m_geode_hover_point = add_point_cloud(empty_point_cloud);
+
+	m_geode_fitted_cylinder_centriod_point_on_bottom = add_point_cloud(empty_point_cloud);
+
+	m_geode_reading_point_cloud = add_point_cloud(empty_point_cloud);
+}
+
+void cloud_viewer::load_parameters(std::map<std::string, std::string>& parameters)
+{
+	m_viewer_parameters.picking_range = std::stof(parameters["marking_picking_range"]);
+	m_viewer_parameters.background_color = str_to_vec4(parameters["marking_background_color"]);
+	m_viewer_parameters.point_size = std::stof(parameters["marking_point_size"]);
+	m_viewer_parameters.point_color = str_to_vec4(parameters["marking_point_color"]);
 }
 
 void PickHandler::screen_to_world(osg::ref_ptr<osgViewer::View> viewer, osg::Vec3d & screen_point, osg::Vec3d & world)
@@ -717,8 +760,6 @@ void PickHandler::update_shapes()
 		//std::cout << "updating the line model ... " << std::endl;
 
 		process_line();
-		
-		m_cloud_viewer->m_line_points = m_cloud_viewer->m_picked_points;
 
 		//std::cout << "line model updated done " << std::endl;
 	}
@@ -729,8 +770,6 @@ void PickHandler::update_shapes()
 		plane_func_3d plane_func;
 
 		process_plane(plane_func);
-
-		m_cloud_viewer->m_plane_points = m_cloud_viewer->m_picked_points;
 
 		//std::cout << "plane model updated done " << std::endl;
 	}
@@ -771,6 +810,8 @@ void PickHandler::process_line()
 		return;
 	}
 	
+	m_cloud_viewer->m_line_points = m_cloud_viewer->m_picked_points;
+
 	line_func_3d line_func;
 
 	m_cloud_viewer->m_cf.fitting_line_3d_linear_least_squares(m_cloud_viewer->m_picked_points, line_func);
@@ -860,6 +901,8 @@ void PickHandler::process_plane(plane_func_3d & plane_func)
 		return;
 	}
 
+	m_cloud_viewer->m_plane_points = m_cloud_viewer->m_picked_points;
+
 	m_cloud_viewer->m_cf.fitting_plane_3d_linear_least_squares(m_cloud_viewer->m_picked_points, plane_func);
 
 	//std::cout
@@ -906,37 +949,92 @@ void PickHandler::process_plane(plane_func_3d & plane_func)
 
 void PickHandler::process_cylinder()
 {
-	if (m_cloud_viewer->m_picked_points.size() < 5)
+	if (m_cloud_viewer->m_picked_points.size() < 6)
 	{
 		return;
 	}
 
-	if (m_cloud_viewer->m_ic_ptr->m_cs == CS_SELECTING_POINTS)
-	{
-		std::cout << "please marking points represent the bottom plane of cylinder.\n";
+	//if (m_cloud_viewer->m_ic_ptr->m_cs == CS_SELECTING_POINTS)
+	//{
+		//std::cout << "please marking points represent the bottom plane of cylinder.\n";
 
-		// green to show bottom plane choosed by user
-		process_plane(m_cylinder_plane_func);
+		//m_cloud_viewer->m_picked_points = *m_cloud_viewer->get_target_points();
 
-		centroid_from_points(m_cloud_viewer->m_picked_points, m_centriod_point_on_bottom);
+	m_cloud_viewer->m_cf.fitting_cylinder_linear_least_squares(m_cloud_viewer->m_picked_points, m_cylinder_func);
 
-		std::vector<point_3d> cpb{ m_centriod_point_on_bottom };
+	//std::cout << m_cylinder_func.height << " radius=" << m_cylinder_func.radius << std::endl;
 
-		// black color to show center point on bottom
-		m_cloud_viewer->update_cylinder_centriod_point_on_bottom(cpb, 0, 0, 0, 15);
+	//// 0) skip the last point which mean the height point
+	//point_3d height_p;
+	//plane_func_3d cylinder_bottom_plane_func;
+	//std::vector<point_3d> bottom_circle_points;
 
-		// set the cylinder function
-		m_cylinder_func.m_line_func.set_nml(m_cylinder_plane_func.a, m_cylinder_plane_func.b, m_cylinder_plane_func.c);
+	//bottom_circle_points = m_cloud_viewer->m_picked_points;
+	//height_p = bottom_circle_points.back();
+	//bottom_circle_points.pop_back();
 
-		m_cylinder_func.m_line_func.set_xyz(m_centriod_point_on_bottom.x, m_centriod_point_on_bottom.y, m_centriod_point_on_bottom.z);
+	//// 1) get one center point on bottom plane and R
+	//centroid_from_points(bottom_circle_points, m_centriod_point_on_bottom);
+	//mean_distance_from_point_to_points(bottom_circle_points, m_centriod_point_on_bottom, m_cylinder_func.r);
+	//m_cloud_viewer->m_cf.fitting_plane_3d_linear_least_squares(bottom_circle_points, cylinder_bottom_plane_func);
+	//
+	//// find other more points on this bottom plane
+	//bottom_circle_points.clear();
+	//points_on_plane_circle(*m_cloud_viewer->get_target_points(), bottom_circle_points,
+	//	cylinder_bottom_plane_func, m_centriod_point_on_bottom, m_cylinder_func.r, 0.8, 1.0);
+	//m_cloud_viewer->update_testing_point_cloud(bottom_circle_points, 255, 255, 0, 4.0f);
 
-		mean_distance_from_point_to_points(m_cloud_viewer->m_picked_points, m_centriod_point_on_bottom, m_cylinder_func.r);
+	//// 2) calculate it again to update cylinder info, that is get new one center point on bottom plane and R
+	//centroid_from_points(bottom_circle_points, m_centriod_point_on_bottom);
+	//mean_distance_from_point_to_points(bottom_circle_points, m_centriod_point_on_bottom, m_cylinder_func.r);
+	//m_cloud_viewer->m_cf.fitting_plane_3d_linear_least_squares(bottom_circle_points, cylinder_bottom_plane_func);
 
-		points_on_cylinder(*m_cloud_viewer->get_target_points(), m_cloud_viewer->m_cylinder_points, m_cylinder_func, m_cylinder_func.r, 0.3);
+	//bottom_circle_points.clear();
+	//points_on_plane_circle(*m_cloud_viewer->get_target_points(), bottom_circle_points,
+	//	cylinder_bottom_plane_func, m_centriod_point_on_bottom, m_cylinder_func.r, 0.8, 1.0);
 
-		m_cloud_viewer->update_cylinder(m_cloud_viewer->m_cylinder_points, 0, 0, 255, 4);
+	//// 3) create current cylinder function
+	//m_cylinder_func.axis.set_nml(cylinder_bottom_plane_func.a, cylinder_bottom_plane_func.b, cylinder_bottom_plane_func.c);
+	//m_cylinder_func.axis.set_xyz(m_centriod_point_on_bottom.x, m_centriod_point_on_bottom.y, m_centriod_point_on_bottom.z);
+	//pedalpoint_point_to_line(height_p, m_cylinder_func.axis, m_cylinder_func.top_plane_point);
 
-	}
+	//// 4) However, we cannot use this cylinder function to show a cylinder on screen
+	Eigen::Vector3f z_axis(0, 0, 1);
+
+	Eigen::Vector3f  rotated_axis = z_axis.cross(m_cylinder_func.axis.direction);
+
+	float rotated_angle = 0.0;
+	angle_between_two_vector_3d(z_axis, m_cylinder_func.axis.direction, rotated_angle);
+
+	//std::cout << "rotated_angle=" << rotated_angle << std::endl;
+
+	m_cloud_viewer->m_cylinder_points = m_cloud_viewer->m_picked_points;
+
+	m_cloud_viewer->update_cylinder(
+		m_cylinder_func,
+		rotated_axis,
+		rotated_angle,
+		0, 255, 0, 0.5);
+
+	/*
+	std::vector<point_3d> cpb{ m_centriod_point_on_bottom };
+
+	// black color to show center point on bottom
+	m_cloud_viewer->update_cylinder_centriod_point_on_bottom(cpb, 0, 0, 0, 15);
+
+	// set the cylinder function
+	m_cylinder_func.m_line_func.set_nml(m_cylinder_plane_func.a, m_cylinder_plane_func.b, m_cylinder_plane_func.c);
+
+	m_cylinder_func.m_line_func.set_xyz(m_centriod_point_on_bottom.x, m_centriod_point_on_bottom.y, m_centriod_point_on_bottom.z);
+
+	mean_distance_from_point_to_points(m_cloud_viewer->m_picked_points, m_centriod_point_on_bottom, m_cylinder_func.r);
+
+	points_on_cylinder(*m_cloud_viewer->get_target_points(), m_cloud_viewer->m_cylinder_points, m_cylinder_func, m_cylinder_func.r, 0.3);
+
+	m_cloud_viewer->update_cylinder(m_cloud_viewer->m_cylinder_points, 255, 255, 0, 4);
+	*/
+
+	//}
 	//else if (m_cloud_viewer->m_ic_ptr->cs_for_cylinder == CS_SELECTING_CYLINDER_DONE)
 	//{
 	//	std::cout << "saving points representing the cylinder. \n";
@@ -952,7 +1050,7 @@ void PickHandler::process_cylinder()
 
 		return;
 	}
-	
+
 	std::vector<point_3d> & points = m_picked_points;
 
 	cylinder_func _cylinder_func;
@@ -1016,7 +1114,7 @@ bool PickHandler::remove_point_from_picked_vector(const point_3d & p)
 	{
 		if (it->x == p.x &&it->y == p.y &&it->z == p.z)
 		{
-			std::cout << "point unclicked from picked set" << std::endl;
+			//std::cout << "point unclicked from picked set" << std::endl;
 
 			it = m_cloud_viewer->m_picked_points.erase(it);
 

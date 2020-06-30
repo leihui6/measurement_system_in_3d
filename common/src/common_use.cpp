@@ -121,6 +121,31 @@ void export_marked_points(std::map<std::string, std::vector<point_3d>>& marked_p
 	}
 }
 
+void export_measured_data(std::multimap<std::string, std::string>& measurement_pairs_map, std::vector<measurement_value>& mv_vec, const std::string & output_file_name)
+{
+	std::ofstream  ofile(output_file_name);
+
+	if (!ofile.is_open()) return;
+
+	std::multimap<std::string, std::string>::iterator it;
+
+	size_t i = 0;
+	for (it = measurement_pairs_map.begin(); it != measurement_pairs_map.end(); ++it)
+	{
+		ofile << it->first << " " << it->second << " ";
+
+		ofile << ((mv_vec[i].is_valid[0] == true) ? mv_vec[i].distance_geometry : -1) << " ";
+		ofile << ((mv_vec[i].is_valid[1] == true) ? (mv_vec[i].distance_scattered[0]) : (-1.0f)) << " ";
+		ofile << ((mv_vec[i].is_valid[1] == true) ? (mv_vec[i].distance_scattered[1]) : (-1.0f)) << " ";
+		ofile << ((mv_vec[i].is_valid[2] == true) ? mv_vec[i].angle : -1);
+
+		ofile << "\n";
+
+		++i;
+	}
+	ofile.close();
+}
+
 void transform_marked_points(std::map<std::string, std::vector<point_3d>>& marked_points, Eigen::Matrix4f & m)
 {
 	std::map<std::string, std::vector<point_3d>>::iterator it;
@@ -136,14 +161,40 @@ void transform_marked_points(std::map<std::string, std::vector<point_3d>>& marke
 	}
 }
 
-void read_file_as_map(const std::string & file_name, std::map<std::string, float> & str_flt_map)
+void read_file_as_map(const std::string & file_name, std::map<std::string, std::string> & str_flt_map)
 {
-	std::ifstream ifile(file_name);
+	std::fstream ifile;
 
-	if (!ifile.is_open())
+	if (!open_file(file_name, &ifile)) return;
+
+	std::string line;
+
+	while (std::getline(ifile, line))
 	{
-		return;
+		if (line.empty()) continue;
+
+		if (line[0] == '#') continue;
+
+		size_t divided_flag = line.find(":");
+
+		if (divided_flag == std::string::npos) continue;
+
+		std::string
+			key_ = line.substr(0, divided_flag++);
+
+		std::string
+			value_ = line.substr(divided_flag, line.size() - divided_flag);
+
+		str_flt_map[key_] = value_;
 	}
+	std::cout << "read " << str_flt_map.size() << " parameters from local file.\n";
+}
+
+void read_file_as_map(const std::string & file_name, std::multimap<std::string, std::string> & str_flt_map)
+{
+	std::fstream ifile(file_name);
+
+	if (!open_file(file_name, &ifile)) return;
 
 	std::string line;
 
@@ -157,16 +208,42 @@ void read_file_as_map(const std::string & file_name, std::map<std::string, float
 
 		if (divided_flag == std::string::npos) continue;
 
-		std::string key_ = line.substr(0, divided_flag);
+		std::string
+			key_ = line.substr(0, divided_flag++);
 
-		divided_flag++;
+		std::string
+			value_ = line.substr(divided_flag, line.size() - divided_flag);
 
-		float value_ = 0.0f;;
-
-		value_ = std::stof(line.substr(divided_flag, line.size() - divided_flag));
-
-		str_flt_map[key_] = value_;
+		str_flt_map.insert(std::pair<std::string, std::string>(key_, value_));
 	}
+}
+
+bool open_file(const std::string & file_name, std::fstream * f, bool clear)
+{
+	try
+	{
+		if (clear)
+			f->open(file_name, std::fstream::in | std::fstream::out);
+		else
+			f->open(file_name, std::fstream::in | std::fstream::out | std::fstream::app);
+	}
+	catch (const std::exception&)
+	{
+		std::cerr << "[error]" << "file path:\"" << file_name << "\" does not exist.\n";
+		f = nullptr;
+		return false;
+	}
+	return true;
+}
+
+osg::Vec4 str_to_vec4(const std::string & s)
+{
+	std::stringstream ss(s);
+	osg::Vec4 vec4;
+	float tmp; size_t i = 0;
+	while (ss >> tmp) vec4[i++] = tmp;
+	if (i != 4)	return osg::Vec4();
+	else	return vec4;
 }
 
 void save_matrix(Eigen::Matrix4f & matrix, const std::string & file_name)

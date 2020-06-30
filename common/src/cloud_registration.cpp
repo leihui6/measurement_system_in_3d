@@ -27,15 +27,15 @@ void cloud_registration::coarse_registration(std::vector<point_3d>& readning_poi
 	// Our matcher.
 	MatcherType::OptionsType options;
 
-	std::map<std::string, float> str_flt_map;
-	read_file_as_map(coarse_configuration, str_flt_map);
+	std::map<std::string, std::string> str2str_map;
+	read_file_as_map(coarse_configuration, str2str_map);
 
-	options.configureOverlap(str_flt_map["overlap_estimation"]);
-	options.delta					= str_flt_map["delta"];
-	options.sample_size				= str_flt_map["sample_size"];
-	options.max_normal_difference	= str_flt_map["max_normal_difference"];
-	options.max_color_distance		= str_flt_map["max_color_distance"];
-	options.max_time_seconds		= str_flt_map["max_time_seconds"];
+	options.configureOverlap(std::stof(str2str_map["overlap_estimation"]));
+	options.delta					= std::stof(str2str_map["delta"]);
+	options.sample_size				= std::stof(str2str_map["sample_size"]);
+	options.max_normal_difference	= std::stof(str2str_map["max_normal_difference"]);
+	options.max_color_distance		= std::stof(str2str_map["max_color_distance"]);
+	options.max_time_seconds		= std::stof(str2str_map["max_time_seconds"]);
 
 	std::cout
 		<< "getOverlapEstimation:" << options.getOverlapEstimation() << "\n"
