@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 	// display all transformation repeatly
 	cloud_viewer m_cloud_viewer("process of coarse and fine registration");
 
-	m_cloud_viewer.add_point_cloud_with_color(reference_point_cloud, 4.0, Eigen::Matrix4f::Identity(), 255, 0, 0);
+	m_cloud_viewer.add_point_cloud_with_color(reference_point_cloud, Eigen::Matrix4f::Identity(), 255, 0, 0);
 
 	boost::thread update_reading_thread(display_point_cloud_from_transformation_vec, m_cloud_viewer, reading_point_cloud, transformation_vec);
 

@@ -14,17 +14,15 @@ bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapt
 
 	switch (ea.getEventType())
 	{
+		// click point
 	case osgGA::GUIEventAdapter::DOUBLECLICK:
 		pick_status = 1;
 		break;
-
+		// remove point
 	case osgGA::GUIEventAdapter::PUSH:
 		if (ea.getButton() & osgGA::GUIEventAdapter::RIGHT_MOUSE_BUTTON)
-		{
 			pick_status = 2;
-		}
 		break;
-
 	default:
 		break;
 	}
@@ -97,7 +95,7 @@ bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapt
 		update_shapes();
 		
 		// update: showing on screen in real time
-		m_cloud_viewer->update_selected_point_cloud(m_cloud_viewer->m_picked_points, 255, 255, 255, 20);
+		m_cloud_viewer->update_selected_point_cloud(m_cloud_viewer->m_picked_points, 255, 255, 255, m_cloud_viewer->m_viewer_parameters.picked_point_size);
 
 		//std::cout << "The size of selected points=" << m_cloud_viewer->m_picked_points.size() << std::endl;
 
@@ -135,6 +133,8 @@ cloud_viewer::cloud_viewer(const std::string & window_name, std::map<std::string
 	m_target_points_ptr(nullptr),
 	m_ic_ptr(nullptr)
 {
+	load_parameters(config_parameters);
+
 	// create a display window and initialize the camera 
 	create_display_window(window_name);
 
@@ -142,8 +142,6 @@ cloud_viewer::cloud_viewer(const std::string & window_name, std::map<std::string
 	m_selector = new PickHandler(this);
 
 	initialize_geode();
-
-	load_parameters(config_parameters);
 }
 
 cloud_viewer::cloud_viewer(const std::string & window_name)
@@ -283,7 +281,7 @@ void cloud_viewer::update_hover_point_cloud(std::vector<point_3d>& points, float
 void cloud_viewer::create_display_window(const std::string & window_name)
 {
 	m_viewer->setCameraManipulator(new osgGA::TrackballManipulator);
-
+	
 	osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
 	traits->x = 40;
 	traits->y = 40;
@@ -300,6 +298,7 @@ void cloud_viewer::create_display_window(const std::string & window_name)
 	GLenum buffer = (traits->doubleBuffer) ? GL_BACK : GL_FRONT;
 	camera->setDrawBuffer(buffer);
 	camera->setReadBuffer(buffer);
+	camera->setClearColor(m_viewer_parameters.background_color);
 
 	// Solve the problem that one point in geode does not show
 	osg::CullStack::CullingMode cullingMode = camera->getCullingMode();
@@ -331,22 +330,15 @@ void cloud_viewer::update_line(std::vector<point_3d> & line_segment, float r, fl
 	if (line_segment.empty())
 	{
 		osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
-
 		m_geode_fitted_line->setChild(0, geometry);
-
 		return;
 	}
 
 	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
-
 	points_to_geometry_node(line_segment, geometry, r, g, b);
-	
 	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINE_STRIP, 0, line_segment.size()));
-	
 	osg::ref_ptr<osg::LineWidth> lw = new osg::LineWidth(line_width);
-	
 	geometry->getOrCreateStateSet()->setAttribute(lw, osg::StateAttribute::ON);
-	
 	m_geode_fitted_line->setChild(0, geometry);
 }
 
@@ -355,18 +347,15 @@ void cloud_viewer::update_plane(std::vector<point_3d> & plane_square,float r, fl
 	if (plane_square.empty())
 	{
 		osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
-
 		m_geode_fitted_plane->setChild(0, geometry);
-
 		return;
 	}
 
 	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
-
-	points_to_geometry_node(plane_square, geometry, r, g, b);
-
+	points_to_geometry_node(plane_square, geometry, r, g, b, m_viewer_parameters.fitting_plane_transparency);
 	geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::QUADS, 0, plane_square.size()));
-
+	geometry->getOrCreateStateSet()->setMode(GL_BLEND, osg::StateAttribute::ON);
+	geometry->getOrCreateStateSet()->setMode(GL_DEPTH_TEST, osg::StateAttribute::ON);
 	m_geode_fitted_plane->setChild(0, geometry);
 }
 
@@ -521,9 +510,11 @@ void cloud_viewer::display()
 	m_viewer->run();
 }
 
-void cloud_viewer::set_the_target_points(std::vector<point_3d> * points)
+void cloud_viewer::set_target_points(std::vector<point_3d> * points)
 {
 	m_target_points_ptr = points;
+
+	m_kdtree.load_points(*points);
 }
 
 void cloud_viewer::set_the_interface_command(interface_command * ic_ptr)
@@ -643,8 +634,9 @@ void cloud_viewer::initialize_geode()
 
 void cloud_viewer::load_parameters(std::map<std::string, std::string>& parameters)
 {
+	if (parameters.empty()) return;
 	m_viewer_parameters.picking_range = std::stof(parameters["marking_picking_range"]);
-	m_viewer_parameters.background_color = str_to_vec4(parameters["marking_background_color"]);
+	m_viewer_parameters.set_background_color(str_to_vec4(parameters["marking_background_color"]));
 	m_viewer_parameters.point_size = std::stof(parameters["marking_point_size"]);
 	m_viewer_parameters.point_color = str_to_vec4(parameters["marking_point_color"]);
 }
@@ -794,123 +786,42 @@ void PickHandler::update_shapes()
 
 void PickHandler::process_line()
 {
-	/*
-	The purpose of this code is to show a line with a known line function within a segment represented by begin and end point.
-
-	line_segment_begin should be the minimal point
-	line_segment_end should be the maximal point
-
-	1) let (x0,y0.z0) in "line_func_3d" be the middle point among line_segment_begin and line_segment_end
-	2) update (x0,y0.z0)
-	3) calculate the "t" representing real begin and end point
-	4) draw a line from real begin point to real end point
-	*/
-	if (m_cloud_viewer->m_picked_points.size() < 2)
-	{
-		return;
-	}
+	if (m_cloud_viewer->m_picked_points.size() < 2) return;
 	
+	// calculate the fitting function
 	m_cloud_viewer->m_line_points = m_cloud_viewer->m_picked_points;
-
 	line_func_3d line_func;
-
 	m_cloud_viewer->m_cf.fitting_line_3d_linear_least_squares(m_cloud_viewer->m_picked_points, line_func);
 	
-	point_3d sphere_center;
-
+	// search points with respect to the fitted plane function
+	point_3d sphere_center; 
 	float sphere_r;
-
 	centroid_from_points(m_cloud_viewer->m_picked_points, sphere_center);
-
 	//mean_distance_from_point_to_points(m_cloud_viewer->m_picked_points, sphere_center, sphere_r);
-
 	longgest_distance_from_point_to_points(m_cloud_viewer->m_picked_points, sphere_center, sphere_r);
+	sphere_r = sphere_r + 0.2*sphere_r;
 
+	if (m_cloud_viewer->m_viewer_parameters.is_auto_pick)
+	{
+		std::vector<point_3d> points_in_sphere, _points_on_line;
+		m_cloud_viewer->m_kdtree.search_neighbors_radius(sphere_r, sphere_center, points_in_sphere);
+		points_on_line(points_in_sphere, _points_on_line, line_func, m_cloud_viewer->m_viewer_parameters.auto_pick_line_threshold);
+		add_points_to_picked_vector(_points_on_line);
+	}
+
+	// calculate the segment points for visualization
 	std::vector<point_3d> real_line_segment(2);
-
 	intersection_line_to_sphere(line_func, sphere_center, sphere_r, real_line_segment[0], real_line_segment[1]);
-
-	m_cloud_viewer->update_line(real_line_segment, 0, 255, 0, 10);
-
-	//std::vector<point_3d> cube_vertexs;
-
-	//m_cloud_viewer->update_testing_point_cloud(cube_vertexs, 0, 255, 0, 10);
-	/*
-	std::vector<float>t_b, t_e;
-
-	man_min_t_line_function(line_func, min_p, max_p, t_b, t_e);
-
-	float
-		min_value_t_b = 0, max_value_t_b = 0,
-		min_value_t_e = 0, max_value_t_e = 0;
-
-	max_min_value_array(t_b, min_value_t_b, max_value_t_b);
-
-	max_min_value_array(t_e, min_value_t_e, max_value_t_e);
-
-	// adjust the (x0,y0,z0) in line function
-	bool adjusted = false;
-	for (float adjust_t = min_value_t_b; adjust_t < max_value_t_e; adjust_t += 0.01)
-	{
-		float
-			tmp_x = line_func.x + adjust_t * line_func.n,
-			tmp_y = line_func.y + adjust_t * line_func.m,
-			tmp_z = line_func.z + adjust_t * line_func.l;
-
-		if (
-			tmp_x < max_p.x && tmp_x > min_p.x &&
-			tmp_y < max_p.y && tmp_y > min_p.y &&
-			tmp_z < max_p.z && tmp_z > min_p.z)
-		{
-			line_func.set_xyz(tmp_x, tmp_y, tmp_z);
-
-			// update t that could let (x0,y0.z0) be middle again
-			man_min_t_line_function(line_func, min_p, max_p, t_b, t_e);
-
-			adjusted = true;
-		}
-	}
-	if (adjusted == false)
-	{
-		std::cerr << "[ERROR] fitting line error" << std::endl;
-
-		return;
-	}
-
-	// for drawing a real line on screen
-	std::vector<point_3d> real_line_segment(2);
-
-	// get the t that could let real begin point be closer to begin point of segment 
-	float real_t_b = 0, real_t_e = 0;
-	get_appropriate_t(line_func, t_b, min_p, real_t_b);
-
-	get_appropriate_t(line_func, t_e, max_p, real_t_e);
-
-	real_line_segment[0].set_xyz(line_func.x + line_func.n * real_t_b, line_func.y + line_func.m * real_t_b, line_func.z + line_func.l * real_t_b);
-
-	real_line_segment[1].set_xyz(line_func.x + line_func.n * real_t_e, line_func.y + line_func.m * real_t_e, line_func.z + line_func.l * real_t_e);
-
-	m_cloud_viewer->update_line(real_line_segment, 0, 255, 0, 10);
-	*/
+	m_cloud_viewer->update_line(real_line_segment, 0, 255, 0, m_cloud_viewer->m_viewer_parameters.fitting_line_width);
 }
 
 void PickHandler::process_plane(plane_func_3d & plane_func)
 {
-	if (m_cloud_viewer->m_picked_points.size() < 3)
-	{
-		return;
-	}
+	if (m_cloud_viewer->m_picked_points.size() < 3) return;
 
 	m_cloud_viewer->m_plane_points = m_cloud_viewer->m_picked_points;
 
 	m_cloud_viewer->m_cf.fitting_plane_3d_linear_least_squares(m_cloud_viewer->m_picked_points, plane_func);
-
-	//std::cout
-	//	<< plane_func.a << " "
-	//	<< plane_func.b << " "
-	//	<< plane_func.c << " "
-	//	<< plane_func.d << " "
-	//	<< std::endl;
 
 	point_3d min_p, max_p;
 
@@ -921,29 +832,27 @@ void PickHandler::process_plane(plane_func_3d & plane_func)
 	pedalpoint_point_to_plane(max_p, plane_func, max_p);
 
 	// using four points to draw a biggest rectangle
-	Eigen::Vector3f 
-		diagonal = 
-		Eigen::Vector3f(max_p.x - min_p.x, max_p.y - min_p.y, max_p.z - min_p.z),
-		line_direction =
-		diagonal.cross(Eigen::Vector3f(plane_func.a, plane_func.b, plane_func.c));
+	Eigen::Vector3f diagonal, line_direction;
+	diagonal = Eigen::Vector3f(max_p.x - min_p.x, max_p.y - min_p.y, max_p.z - min_p.z);
+	line_direction = diagonal.cross(Eigen::Vector3f(plane_func.a, plane_func.b, plane_func.c));
 
-	point_3d
-		mid_point = point_3d((min_p.x + max_p.x) / 2, (min_p.y + max_p.y) / 2, (min_p.z + max_p.z) / 2),
-		corner_p1, corner_p2;
-
+	point_3d mid_point, corner_p1, corner_p2;
+	mid_point = point_3d((min_p.x + max_p.x) / 2, (min_p.y + max_p.y) / 2, (min_p.z + max_p.z) / 2);
 	float half_dis = diagonal.norm() / 2;
 
 	point_along_with_vector_within_dis(mid_point, line_direction, corner_p1, corner_p2, half_dis);
 
-	//std::vector<point_3d> test_vec{ mid_point ,corner_p1 , corner_p2, min_p, max_p };
-	//m_cloud_viewer->update_testing_point_cloud(test_vec, 255, 0, 0, 20);
+	// auto update plane with more points
+	if (m_cloud_viewer->m_viewer_parameters.is_auto_pick)
+	{
+		std::vector<point_3d> points_in_sphere, _points_on_plane;
+		m_cloud_viewer->m_kdtree.search_neighbors_radius(half_dis, mid_point, points_in_sphere);
+		points_on_plane(points_in_sphere, _points_on_plane, plane_func, m_cloud_viewer->m_viewer_parameters.auto_pick_plane_threshold);
+		add_points_to_picked_vector(_points_on_plane);
+	}
 
 	std::vector<point_3d> biggest_rectangle{ min_p,max_p,corner_p1,corner_p2 }, drawable_points_ordered;
-
 	make_points_ordered_by_distance(biggest_rectangle, drawable_points_ordered);
-
-	//m_cloud_viewer->update_testing_point_cloud(convex_hull_points_ordered, 255, 0, 0, 20);
-
 	m_cloud_viewer->update_plane(drawable_points_ordered, 0, 255, 0);
 }
 
@@ -1096,8 +1005,7 @@ bool PickHandler::add_point_to_picked_vector(const point_3d & p)
 	{
 		if (it->x == p.x &&it->y == p.y &&it->z == p.z)
 		{
-			std::cout << "point existed" << std::endl;
-
+			//std::cout << "point existed" << std::endl;
 			return false;
 		}
 	}
@@ -1105,6 +1013,14 @@ bool PickHandler::add_point_to_picked_vector(const point_3d & p)
 	m_cloud_viewer->m_picked_points.push_back(p);
 
 	return true;
+}
+
+void PickHandler::add_points_to_picked_vector(std::vector<point_3d>& vec)
+{
+	for (size_t i = 0; i < vec.size(); ++i)
+	{
+		add_point_to_picked_vector(vec[i]);
+	}
 }
 
 bool PickHandler::remove_point_from_picked_vector(const point_3d & p)

@@ -91,9 +91,9 @@ struct plane_func_3d
 {
 	plane_func_3d();
 
-	void set_abcd(float a, float b, float c, float d);
+	void set_abcd(float _a, float _b, float _c, float _d);
 
-	//void get_normal(point_3d & normal);
+	void set_abcd(float _a, float _b, float _c, point_3d & p);
 
 	template <typename T>
 	T direction()
@@ -179,12 +179,12 @@ void convert_to_openGR_points(std::vector<point_3d> & points, std::vector<gr::Po
 
 void convert_to_pointMatcher_points(std::vector<point_3d> & points, PointMatcher<float>::DataPoints & DP);
 
-void points_to_osg_structure(std::vector<point_3d>& points, osg::ref_ptr<osg::Vec3Array> coords, osg::ref_ptr<osg::Vec4Array> color, osg::ref_ptr<osg::Vec3Array> normals, float r = 0, float g = 0, float b = 0);
+void points_to_osg_structure(std::vector<point_3d>& points, osg::ref_ptr<osg::Vec3Array> coords, osg::ref_ptr<osg::Vec4Array> color, osg::ref_ptr<osg::Vec3Array> normals, float r = 0, float g = 0, float b = 0, float w = 1.0);
 
 // osg needs (p,height,radius) to draw cylinder on screen instead of only cylinder function
 void cylinder_func_to_osg_structure(std::vector<point_3d> & points, cylinder_func & cl, point_3d & center_p, float &height, float &radius);
 
-void points_to_geometry_node(std::vector<point_3d> & points, osg::ref_ptr<osg::Geometry> geometry, float r = 0, float g = 0, float b = 0);
+void points_to_geometry_node(std::vector<point_3d> & points, osg::ref_ptr<osg::Geometry> geometry, float r = 0, float g = 0, float b = 0, float w = 1.0);
 
 // get minimal point and maximal point in a specific point set
 void max_min_point_3d_vec(std::vector<point_3d> & points, point_3d & min_p, point_3d & max_p);
@@ -229,6 +229,8 @@ void plane_function_from_three_points(point_3d & A, point_3d & B, point_3d & C, 
 void intersection_line_to_sphere(line_func_3d & line_func, point_3d & sphere_center, float & sphere_r, point_3d & res_p1, point_3d & res_p2);
 
 void points_on_plane(std::vector<point_3d>& points, std::vector<point_3d>& points_on_plane, plane_func_3d & plane_func, float distance_threshold);
+
+void points_on_line(std::vector<point_3d>& points, std::vector<point_3d>& points_on_line, line_func_3d & line_func, float distance_threshold);
 
 void points_on_cylinder(std::vector<point_3d>& points, std::vector<point_3d>& points_on_cylinder, cylinder_func & _cylinder_func, float threshold);
 

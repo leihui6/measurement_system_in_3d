@@ -34,25 +34,3 @@ Each step should has its dependencies libraries, also might require the whole li
 ## Demo
 
 ![demo](./demo/demo.gif)
-
-## Record
-
-- 19/6/2020
-  - Export marked points into file in stage of labeling.
-  - Test read and save function of matrix.
-  - Fix bugs
-
-- 20/06/2020
-  - Modify the libpointmacher to let it support export of matrix.
-  - Add a seprarte tool that can display fine and coarse process using matrix saved.
-  - Fix bugs.
-
-- 21/06/2020
-  - Add searching module but it is not completed.
-  - Fix bugs.
-
-- 25/06/2020
-  - Modify the libpointmacher to let it export matrix into one file.
-  - Support load configruation file for coarse registration.
-  - Complete searching point process.
-  - Fix bugs.

@@ -17,12 +17,18 @@ class kd_tree
 public:
 
 	kd_tree(std::vector<point_3d> & points);
+	
+	kd_tree();
 
 	~kd_tree();
+
+	void load_points(std::vector<point_3d> & points);
 
 	size_t search_neighbors_knn(size_t k, point_3d & p, std::vector<size_t> &ret_index, std::vector<float> &out_dist_sqr);
 
 	size_t search_neighbors_radius(float search_radius, point_3d & p, std::vector<std::pair<size_t, float> > & ret_matches);
+
+	size_t search_neighbors_radius(float search_radius, point_3d & p, std::vector<point_3d> & ret_index);
 
 	void search_points_correspondence(std::vector<point_3d> & points, kd_tree & other_kd_tree, std::vector<point_3d> & other_points);
 

@@ -10,12 +10,26 @@ kd_tree::kd_tree(std::vector<point_3d> & points)
 	m_kd_tree_t->buildIndex();
 }
 
+kd_tree::kd_tree()
+{
+}
+
+
 kd_tree::~kd_tree()
 {
 	if (m_kd_tree_t)
 	{
 		delete m_kd_tree_t;
 	}
+}
+
+void kd_tree::load_points(std::vector<point_3d>& points)
+{
+	m_pc.load_points(points);
+
+	m_kd_tree_t = new kd_tree_t(3, m_pc, KDTreeSingleIndexAdaptorParams(10 /* max leaf */));
+
+	m_kd_tree_t->buildIndex();
 }
 
 size_t kd_tree::search_neighbors_knn(size_t k, point_3d & p, std::vector<size_t> &ret_index, std::vector<float> &out_dist_sqr)
@@ -46,6 +60,22 @@ size_t kd_tree::search_neighbors_radius(float search_radius, point_3d & p, std::
 	size_t nMatches = m_kd_tree_t->radiusSearch(&p.x, static_cast<float>(search_radius), ret_matches, params);
 
 	return nMatches;
+}
+
+size_t kd_tree::search_neighbors_radius(float search_radius, point_3d & p, std::vector<point_3d> & ret_points)
+{
+	nanoflann::SearchParams params;
+	params.sorted = true;
+
+	std::vector<std::pair<size_t, float> > ret_matches;
+	size_t nMatches = m_kd_tree_t->radiusSearch(&p.x, static_cast<float>(search_radius), ret_matches, params);
+
+	for (size_t i = 0; i < ret_matches.size(); ++i)
+	{
+		ret_points.push_back(this->m_pc.pts[ret_matches[i].first]);
+	}
+
+	return ret_points.size();
 }
 
 void kd_tree::search_points_correspondence(std::vector<point_3d>& points, kd_tree & other_kd_tree, std::vector<point_3d>& other_points)

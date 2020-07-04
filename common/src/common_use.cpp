@@ -43,7 +43,7 @@ void display_point_cloud_from_transformation_vec(cloud_viewer & cv, std::vector<
 	{
 		cv.update_reading_point_cloud(transformed_points[i], 0, 255, 0, 4.0);
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(123));
+		std::this_thread::sleep_for(std::chrono::milliseconds(400));
 
 		if (i + 1 == transformation_vec.size())
 		{

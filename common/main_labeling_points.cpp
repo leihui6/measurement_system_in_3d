@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 
 	m_cloud_viewer.add_point_cloud(points_1_vec);
 
-	m_cloud_viewer.set_the_target_points(&points_1_vec);
+	m_cloud_viewer.set_target_points(&points_1_vec);
 	
 	m_cloud_viewer.set_export_file_name(output_folder_name);
 

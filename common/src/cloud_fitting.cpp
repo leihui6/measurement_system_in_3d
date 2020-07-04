@@ -15,58 +15,59 @@ cloud_fitting::~cloud_fitting()
 
 void cloud_fitting::fitting_line_3d_linear_least_squares(std::vector<point_3d>& points, line_func_3d & line_func)
 {
-	std::vector<K::Point_3> cgal_points;
+	if (points.size() < 2) return;
 
-	convert_to_CGAL_points(points, cgal_points);
+	Eigen::MatrixXf m;
+	m.resize(points.size(), 3);
+	point_3d mean_p;
+	centroid_from_points(points, mean_p);
 
-	K::Line_3 cgal_line_func;
+	for (size_t i = 0; i < points.size(); i++)
+	{
+		m(i, 0) = points[i].x - mean_p.x;
+		m(i, 1) = points[i].y - mean_p.y;
+		m(i, 2) = points[i].z - mean_p.z;
+	}
 
-	float fitting_quality =
-		linear_least_squares_fitting_3(cgal_points.begin(), cgal_points.end(), cgal_line_func, CGAL::Dimension_tag<0>());
+	//std::cout << m << std::endl;
 
-	//std::cout << fitting_quality << std::endl;
+	Eigen::JacobiSVD<Eigen::MatrixXf> svd(m, Eigen::ComputeThinU | Eigen::ComputeThinV);
 
-	//std::cout << cgal_line_func << std::endl;
-	//std::cout << cgal_line_func.point() << std::endl;
-	//std::cout << cgal_line_func.to_vector() << std::endl;
+	Eigen::MatrixXf rm = svd.matrixV();
 
-	//std::cout << cgal_line_func.point()[0] << std::endl;
-	//std::cout << cgal_line_func.point()[1] << std::endl;
-	//std::cout << cgal_line_func.point()[2] << std::endl;
-	//std::cout << cgal_line_func.to_vector()[0] << std::endl;
-	//std::cout << cgal_line_func.to_vector()[1] << std::endl;
-	//std::cout << cgal_line_func.to_vector()[2]<< std::endl;
-	//std::cout << cgal_line_func.point(2) << std::endl;
-
-	line_func.set_xyz(
-		cgal_line_func.point()[0],
-		cgal_line_func.point()[1],
-		cgal_line_func.point()[2]
-	);
-
-	line_func.set_nml(
-		cgal_line_func.to_vector()[0],
-		cgal_line_func.to_vector()[1],
-		cgal_line_func.to_vector()[2]);
+	if (rm.cols() > 1)
+	{
+		line_func.set_xyz(mean_p.x, mean_p.y, mean_p.z);
+		line_func.set_nml(rm(0, 0), rm(1, 0), rm(2, 0));
+	}
 }
 
 void cloud_fitting::fitting_plane_3d_linear_least_squares(std::vector<point_3d>& points, plane_func_3d & plane_func)
 {
-	std::vector<K::Point_3> cgal_points;
+	if (points.size() < 3) return;
 
-	convert_to_CGAL_points(points, cgal_points);
+	Eigen::MatrixXf m;
+	m.resize(points.size(), 3);
+	point_3d mean_p;
+	centroid_from_points(points, mean_p);
 
-	K::Plane_3 cgal_plane_func;
+	for (size_t i = 0; i < points.size(); i++)
+	{
+		m(i, 0) = points[i].x - mean_p.x;
+		m(i, 1) = points[i].y - mean_p.y;
+		m(i, 2) = points[i].z - mean_p.z;
+	}
 
-	float fitting_quality = 
-		linear_least_squares_fitting_3(cgal_points.begin(), cgal_points.end(), cgal_plane_func, CGAL::Dimension_tag<0>());
+	//std::cout << m << std::endl;
 
-	plane_func.set_abcd(
-		cgal_plane_func.a(),
-		cgal_plane_func.b(),
-		cgal_plane_func.c(),
-		cgal_plane_func.d()
-	);
+	Eigen::JacobiSVD<Eigen::MatrixXf> svd(m, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+	Eigen::MatrixXf rm = svd.matrixV();
+
+	if (rm.cols() == 3)
+	{
+		plane_func.set_abcd(rm(0, 2), rm(1, 2), rm(2, 2), mean_p);
+	}
 }
 
 float cloud_fitting::fitting_cylinder_linear_least_squares(std::vector<point_3d>& points, cylinder_func & _cylinder_func)

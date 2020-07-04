@@ -159,13 +159,22 @@ plane_func_3d::plane_func_3d()
 
 }
 
-void plane_func_3d::set_abcd(float a, float b, float c, float d)
+void plane_func_3d::set_abcd(float _a, float _b, float _c, float _d)
 {
-	this->a = a;
-	this->b = b;
-	this->c = c;
-	this->d = d;
+	a = _a;
+	b = _b;
+	c = _c;
+	d = _d;
 }
+
+void plane_func_3d::set_abcd(float _a, float _b, float _c, point_3d & p)
+{
+	a = _a;
+	b = _b;
+	c = _c;
+	d = -(a*p.x + b * p.y + c * p.z);
+}
+
 
 //Eigen::Vector3f plane_func_3d::direction()
 //{
@@ -271,7 +280,7 @@ void convert_to_pointMatcher_points(std::vector<point_3d>& points, PointMatcher<
 	std::cout << std::endl;
 }
 
-void points_to_osg_structure(std::vector<point_3d>& points, osg::ref_ptr<osg::Vec3Array> coords, osg::ref_ptr<osg::Vec4Array> colors, osg::ref_ptr<osg::Vec3Array> normals, float r, float g, float b)
+void points_to_osg_structure(std::vector<point_3d>& points, osg::ref_ptr<osg::Vec3Array> coords, osg::ref_ptr<osg::Vec4Array> colors, osg::ref_ptr<osg::Vec3Array> normals, float r, float g, float b, float w)
 {
 	// use point's color 
 	if (r == 0 && g == 0 && b == 0)
@@ -280,7 +289,7 @@ void points_to_osg_structure(std::vector<point_3d>& points, osg::ref_ptr<osg::Ve
 		{
 			coords->push_back(osg::Vec3(points[i].x, points[i].y, points[i].z));
 
-			colors->push_back(osg::Vec4(points[i].r, points[i].g, points[i].b, 1.0f));
+			colors->push_back(osg::Vec4(points[i].r, points[i].g, points[i].b, w));
 		}
 	}
 	// use specific color
@@ -290,7 +299,7 @@ void points_to_osg_structure(std::vector<point_3d>& points, osg::ref_ptr<osg::Ve
 		{
 			coords->push_back(osg::Vec3(points[i].x, points[i].y, points[i].z));
 		}
-		colors->push_back(osg::Vec4(r, g, b, 1.0f));
+		colors->push_back(osg::Vec4(r, g, b, w));
 	}
 
 	normals->push_back(osg::Vec3(0.0f, 1.0f, 0.0f));
@@ -325,7 +334,7 @@ void cylinder_func_to_osg_structure(std::vector<point_3d>& points, cylinder_func
 	radius = cl.radius;
 }
 
-void points_to_geometry_node(std::vector<point_3d>& points, osg::ref_ptr<osg::Geometry> geometry, float r, float g, float b)
+void points_to_geometry_node(std::vector<point_3d>& points, osg::ref_ptr<osg::Geometry> geometry, float r, float g, float b, float w)
 {
 	osg::ref_ptr<osg::Vec3Array> coords = new osg::Vec3Array();
 
@@ -333,7 +342,7 @@ void points_to_geometry_node(std::vector<point_3d>& points, osg::ref_ptr<osg::Ge
 
 	osg::ref_ptr<osg::Vec3Array> normals = new osg::Vec3Array;
 
-	points_to_osg_structure(points, coords, colors, normals, r, g, b);
+	points_to_osg_structure(points, coords, colors, normals, r, g, b, w);
 
 	// use color of each point
 	if (r == 0 && g == 0 && b == 0)
@@ -740,6 +749,23 @@ void points_on_plane(std::vector<point_3d>& points, std::vector<point_3d>& point
 		if (dis_to_plane < distance_threshold)
 		{
 			points_on_plane.push_back(points[i]);
+		}
+	}
+}
+
+void points_on_line(std::vector<point_3d>& points, std::vector<point_3d>& points_on_line, line_func_3d & line_func, float distance_threshold)
+{
+	points_on_line.clear();
+
+	for (size_t i = 0; i < points.size(); i++)
+	{
+		float dis_to_line = 0.0;
+
+		distance_point_to_line(points[i], line_func, dis_to_line);
+
+		if (dis_to_line < distance_threshold)
+		{
+			points_on_line.push_back(points[i]);
 		}
 	}
 }

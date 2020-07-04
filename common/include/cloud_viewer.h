@@ -2,7 +2,7 @@
 #define cloud_viewer_H
 
 #include <windows.h>
-//#include <WinDef.h> 
+//#include <WinDef.h>
 //#include <WinGDI.h>
 
 #include <osgViewer/Viewer>
@@ -27,6 +27,7 @@
 #include "interface_command.h"
 #include "cloud_fitting.h"
 #include "cloud_geometry.h"
+#include "cloud_search.h"
 
 class cloud_viewer;
 
@@ -38,8 +39,16 @@ struct viewer_parameters
 		picking_range(0.1),
 		background_color(0, 0, 0, 1),
 		point_size(4.0),
-		point_color(1, 1, 1, 1)
-	{}
+		point_color(1, 1, 1, 1),
+		picked_point_size(10.0),
+		is_auto_pick(true)
+	{
+		auto_pick_line_threshold = 0.1;
+		auto_pick_plane_threshold = 0.1;
+		auto_pick_point_threshold = 0.1;
+		fitting_line_width = 3.0;
+		fitting_plane_transparency = 0.2;
+	}
 	// default:0.1
 	float picking_range;
 	// default: 0 0 0 1
@@ -48,6 +57,20 @@ struct viewer_parameters
 	float point_size;
 	// default: 
 	osg::Vec4 point_color;
+	float picked_point_size;
+	bool is_auto_pick;
+	// threshold used for collect more points representing a line
+	float auto_pick_line_threshold;
+	float auto_pick_plane_threshold;
+	float auto_pick_point_threshold;
+
+	float fitting_line_width;
+	float fitting_plane_transparency;
+
+	void set_background_color(osg::Vec4 c)
+	{
+		background_color.set(c[0] / 255, c[1] / 255, c[2] / 255, c[3] / 255);
+	}
 };
 
 //! pick point on point cloud
@@ -95,6 +118,8 @@ private:
 
 	bool add_point_to_picked_vector(const point_3d & p);
 
+	void add_points_to_picked_vector(std::vector< point_3d > & vec);
+
 	bool remove_point_from_picked_vector(const point_3d & p);
 };
 
@@ -139,12 +164,12 @@ public:
 
 	// update testing points
 	void update_testing_point_cloud(std::vector<point_3d>& points, float r, float g, float b, float point_size);
-	
+
 	void add_model(const std::string & filename);
 
 	void display();
 
-	void set_the_target_points(std::vector<point_3d> * points);
+	void set_target_points(std::vector<point_3d> * points);
 
 	void set_the_interface_command(interface_command * ic_ptr);
 
@@ -172,7 +197,7 @@ public:
 
 	// update once picking, this is current points
 	std::vector<point_3d> m_points;
-	
+
 	std::vector<point_3d> m_line_points;
 
 	std::vector<point_3d> m_plane_points;
@@ -221,8 +246,15 @@ private:
 
 	void initialize_geode();
 
-private:
+	// kd-tree
+public:
+	kd_tree m_kdtree;
+
+	// parameters
+public:
 	viewer_parameters m_viewer_parameters;
+
+private:
 	// load parameters from file
 	void load_parameters(std::map<std::string, std::string> & parameters);
 };
