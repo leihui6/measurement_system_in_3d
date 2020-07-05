@@ -151,26 +151,20 @@ void cloud_measurement::calculate_point_to_point(std::vector<point_3d>& points_1
 {
 	std::cout << "calculate_point_to_point\n";
 
-	mv.is_valid[0] = true;
-	mv.is_valid[1] = true;
-	mv.is_valid[2] = false;
-
 	point_3d centroid_point_1, centroid_point_2;
 	centroid_from_points(points_1, centroid_point_1);
 	centroid_from_points(points_2, centroid_point_2);
 
-	distance_point_to_point(centroid_point_1, centroid_point_2, mv.distance_geometry);
-
-	distance_scattered_points(points_1, points_2, mv.distance_scattered[0], mv.distance_scattered[1]);
+	// geometrical distance
+	distance_point_to_point(centroid_point_1, centroid_point_2, mv.distance_geometrical);
+	
+	// scattered distance
+	distance_scattered_points(points_1, points_2, mv.distance_scattered);
 }	
 
 void cloud_measurement::calculate_point_to_line(std::vector<point_3d>& points_1, std::vector<point_3d>& points_2, measurement_value & mv)
 {
 	std::cout << "calculate_point_to_line\n";
-
-	mv.is_valid[0] = true;
-	mv.is_valid[1] = false;
-	mv.is_valid[2] = false;
 
 	// calculate the geometrical distance.
 	point_3d centroid_point_1;
@@ -179,109 +173,64 @@ void cloud_measurement::calculate_point_to_line(std::vector<point_3d>& points_1,
 	line_func_3d line_func;
 	cf.fitting_line_3d_linear_least_squares(points_2, line_func);
 
-	distance_point_to_line(centroid_point_1, line_func, mv.distance_geometry);
-	/*
-	// calculate the scattered distance.
-	point_3d centroid_point_2;
-	float loggest_distance = 0.0;
-	centroid_from_points(points_2, centroid_point_2);
-	longgest_distance_from_point_to_points(points_2, centroid_point_2, loggest_distance);
+	// geometrical distance
+	distance_point_to_line(centroid_point_1, line_func, mv.distance_geometrical);
 
-	point_3d intersection_p_1, intersection_p_2;
-	intersection_line_to_sphere(line_func, centroid_point_2, loggest_distance, intersection_p_1, intersection_p_2);
-
-	point_3d pedal_p;
-	pedalpoint_point_to_line(centroid_point_1, line_func, pedal_p);
-
-	float seg_dis_1 = 0.0, seg_dis_2 = 0.0;
-	distance_point_to_point(centroid_point_1, intersection_p_1, seg_dis_1);
-	distance_point_to_point(centroid_point_1, intersection_p_2, seg_dis_2);
-
-	// pedel point is in segment points
-	if (is_in_range_of_two_points(pedal_p, intersection_p_1, intersection_p_2))
-	{
-		distance_point_to_point(centroid_point_1, pedal_p, mv.distance_scattered[0]);
-
-		if (seg_dis_1 > seg_dis_2)
-			mv.distance_scattered[1] = seg_dis_1;
-		else
-			mv.distance_scattered[1] = seg_dis_2;
-	}
-	else
-	{
-		if (seg_dis_1 > seg_dis_2)
-		{
-			mv.distance_scattered[0] = seg_dis_2;
-			mv.distance_scattered[1] = seg_dis_1;
-		}
-		else
-		{
-			mv.distance_scattered[0] = seg_dis_1;
-			mv.distance_scattered[1] = seg_dis_2;
-		}
-	}
-	*/
+	// scattered distance
+	distance_scattered_points(points_1, points_2, mv.distance_scattered);
 }
 
 void cloud_measurement::calculate_point_to_plane(std::vector<point_3d>& points_1, std::vector<point_3d>& points_2, measurement_value & mv)
 {
 	std::cout << "calculate_point_to_plane\n";
 
-	mv.is_valid[0] = true;
-	mv.is_valid[1] = false;
-	mv.is_valid[2] = false;
-
 	point_3d centroid_point;
 	centroid_from_points(points_1, centroid_point);
 
 	plane_func_3d plane_func;
 	cf.fitting_plane_3d_linear_least_squares(points_2, plane_func);
 
-	distance_point_to_plane(centroid_point, plane_func, mv.distance_geometry);
+	// geometrical distance
+	distance_point_to_plane(centroid_point, plane_func, mv.distance_geometrical);
+
+	// scattered distance
+	distance_scattered_points(points_1, points_2, mv.distance_scattered);
 }
 
 void cloud_measurement::calculate_point_to_cylinder(std::vector<point_3d>& points_1, std::vector<point_3d>& points_2, measurement_value & mv)
 {
 	std::cout << "calculate_point_to_cylinder\n";
 
-	mv.is_valid[0] = true;
-	mv.is_valid[1] = false;
-	mv.is_valid[2] = false;
-
 	point_3d centroid_point;
 	centroid_from_points(points_1, centroid_point);
 
 	cylinder_func _cylinder_func;
 	cf.fitting_cylinder_linear_least_squares(points_2, _cylinder_func);
 
-	distance_point_to_line(centroid_point, _cylinder_func.axis, mv.distance_geometry);
+	// geometrical distance
+	distance_point_to_line(centroid_point, _cylinder_func.axis, mv.distance_geometrical);
 }
 
 void cloud_measurement::calculate_line_to_line(std::vector<point_3d>& points_1, std::vector<point_3d>& points_2, measurement_value & mv)
 {
 	std::cout << "calculate_line_to_line\n";
 
-	mv.is_valid[0] = false;
-	mv.is_valid[1] = false;
-	mv.is_valid[2] = true;
-
 	line_func_3d line_func_1, line_func_2;
 	cf.fitting_line_3d_linear_least_squares(points_1, line_func_1);
 	cf.fitting_line_3d_linear_least_squares(points_2, line_func_2);
 
+	// angle
 	angle_between_two_vector_3d(line_func_1.direction, line_func_2.direction, mv.angle);
-
 	if (mv.angle > 90)
 		mv.angle = 180 - mv.angle;
+
+	// scattered distance
+	distance_scattered_points(points_1, points_2, mv.distance_scattered);
 }
 
 void cloud_measurement::calculate_line_to_plane(std::vector<point_3d>& points_1, std::vector<point_3d>& points_2, measurement_value & mv)
 {
 	std::cout << "calculate_line_to_plane\n";
-
-	mv.is_valid[0] = false;
-	mv.is_valid[1] = false;
-	mv.is_valid[2] = true;
 
 	line_func_3d line_func;
 	cf.fitting_line_3d_linear_least_squares(points_1, line_func);
@@ -289,21 +238,20 @@ void cloud_measurement::calculate_line_to_plane(std::vector<point_3d>& points_1,
 	plane_func_3d plane_func;
 	cf.fitting_plane_3d_linear_least_squares(points_2, plane_func);
 
+	// angle
 	angle_between_two_vector_3d(line_func.direction, plane_func.direction<Eigen::Vector3f>(), mv.angle);
-
 	if (mv.angle > 90)
 		mv.angle = 180 - mv.angle;
 
 	mv.angle = 90 - mv.angle;
+
+	// scattered distance
+	distance_scattered_points(points_1, points_2, mv.distance_scattered);
 }
 
 void cloud_measurement::calculate_line_to_cylinder(std::vector<point_3d>& points_1, std::vector<point_3d>& points_2, measurement_value & mv)
 {
 	std::cout << "calculate_line_to_cylinder\n";
-
-	mv.is_valid[0] = false;
-	mv.is_valid[1] = false;
-	mv.is_valid[2] = true;
 
 	line_func_3d line_func;
 	cf.fitting_line_3d_linear_least_squares(points_1, line_func);
@@ -311,36 +259,33 @@ void cloud_measurement::calculate_line_to_cylinder(std::vector<point_3d>& points
 	cylinder_func _cylinder_func;
 	cf.fitting_cylinder_linear_least_squares(points_2, _cylinder_func);
 
+	// angle
 	angle_between_two_vector_3d(line_func.get_direction_point_3d(), _cylinder_func.axis.get_direction_point_3d(), mv.angle);
-
 	if (mv.angle > 90)
 		mv.angle = 180 - mv.angle;
+
+	// geometrical distance(point(cylinder) to line)
+	distance_point_to_line(_cylinder_func.axis.get_origin_point_3d(), line_func, mv.distance_geometrical);
 }
 
 void cloud_measurement::calculate_plane_to_plane(std::vector<point_3d>& points_1, std::vector<point_3d>& points_2, measurement_value & mv)
 {
 	std::cout << "calculate_plane_to_plane\n";
 
-	std::cout << "calculate_line_to_plane\n";
-
-	mv.is_valid[0] = false;
-	mv.is_valid[1] = false;
-	mv.is_valid[2] = true;
-
 	plane_func_3d plane_func_1, plane_func_2;
 	cf.fitting_plane_3d_linear_least_squares(points_1, plane_func_1);
 	cf.fitting_plane_3d_linear_least_squares(points_2, plane_func_2);
 
+	// angle
 	angle_between_two_vector_3d(plane_func_1.direction<Eigen::Vector3f>(), plane_func_2.direction<Eigen::Vector3f>(), mv.angle);
+
+	// scattered distance
+	distance_scattered_points(points_1, points_2, mv.distance_scattered);
 }
 
 void cloud_measurement::calculate_plane_to_cylinder(std::vector<point_3d>& points_1, std::vector<point_3d>& points_2, measurement_value & mv)
 {
 	std::cout << "calculate_plane_to_cylinder\n";
-
-	mv.is_valid[0] = false;
-	mv.is_valid[1] = false;
-	mv.is_valid[2] = true;
 
 	plane_func_3d plane_func;
 	cf.fitting_plane_3d_linear_least_squares(points_1, plane_func);
@@ -348,59 +293,48 @@ void cloud_measurement::calculate_plane_to_cylinder(std::vector<point_3d>& point
 	cylinder_func _cylinder_func;
 	cf.fitting_cylinder_linear_least_squares(points_2, _cylinder_func);
 
+	// angle
 	angle_between_two_vector_3d(plane_func.direction<point_3d>(), _cylinder_func.axis.get_direction_point_3d(), mv.angle);
-
 	if (mv.angle > 90)
 		mv.angle = 180 - mv.angle;
 
 	mv.angle = 90 - mv.angle;
+
+	// geometrical distance(point(cylinder) to plane)
+	distance_point_to_plane(_cylinder_func.axis.get_origin_point_3d(), plane_func, mv.distance_geometrical);
 }
 
 void cloud_measurement::calculate_cylinder_to_cylinder(std::vector<point_3d>& points_1, std::vector<point_3d>& points_2, measurement_value & mv)
 {
 	std::cout << "calculate_cylinder_to_cylinder\n";
 
-	mv.is_valid[0] = false;
-	mv.is_valid[1] = false;
-	mv.is_valid[2] = true;
-
 	cylinder_func _cylinder_func_1, _cylinder_func_2;
 	cf.fitting_cylinder_linear_least_squares(points_1, _cylinder_func_1);
 	cf.fitting_cylinder_linear_least_squares(points_2, _cylinder_func_2);
 
+	// angle
 	angle_between_two_vector_3d(_cylinder_func_1.axis.get_direction_point_3d(), _cylinder_func_2.axis.get_direction_point_3d(), mv.angle);
-
 	if (mv.angle > 90)
 		mv.angle = 180 - mv.angle;
+	
+	// geometrical distance(point(cylinder) to line(cylinder))
+	distance_point_to_line(_cylinder_func_1.axis.get_origin_point_3d(), _cylinder_func_2.axis, mv.distance_geometrical);
 }
 
-void cloud_measurement::distance_scattered_points(std::vector<point_3d>& points_1, std::vector<point_3d>& points_2, float & min_distance, float & max_distance)
+void cloud_measurement::distance_scattered_points(std::vector<point_3d>& points_1, std::vector<point_3d>& points_2, float & distance)
 {
-	float min_dis = FLT_MAX, max_dis = FLT_MIN;
+	float min_dis = FLT_MAX;
 
 	for (size_t i = 0; i < points_1.size(); ++i)
 	{
 		for (size_t j = 0; j < points_2.size(); ++j)
 		{
 			float dis = 0.0;
-
 			distance_point_to_point(points_1[i], points_2[j], dis);
 
 			if (dis < min_dis)
-			{
 				min_dis = dis;
-			}
-
-			if (dis > max_dis)
-			{
-				max_dis = dis;
-			}
 		}
 	}
-
-	//std::cout << "max=" << max_distance << " min=" << min_distance << "\n";
-
-	min_distance = min_dis;
-
-	max_distance = max_dis;
+	distance = min_dis;
 }

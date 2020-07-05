@@ -3,24 +3,22 @@
 
 #include "cloud_fitting.h"
 
+#define INVALIDVALUE -1.0f
+
 struct measurement_value
 {
+	measurement_value() :
+		distance_geometrical(INVALIDVALUE),
+		distance_scattered(INVALIDVALUE),
+		angle(INVALIDVALUE) {}
 	// distance based on geometry(function)
-	// is_valid[0]
-	float distance_geometry;
+	float distance_geometrical;
 
 	// distance based on scattered points
-	// is_valid[1]
-	// [0] [min]
-	// [1] [max]
-	float distance_scattered[2];
+	float distance_scattered;
 
 	// angle in degree 
-	// is_valid[2]
 	float angle;
-
-	// identify which one is valid for items above.
-	bool is_valid[3];
 };
 
 class cloud_measurement
@@ -60,7 +58,7 @@ private:
 	void calculate_cylinder_to_cylinder(std::vector<point_3d> & points_1, std::vector<point_3d> & points_2, measurement_value & mv);
 
 private:
-	void distance_scattered_points(std::vector<point_3d>& points_1, std::vector<point_3d>& points_2, float & min_distance, float & max_distance);
+	void distance_scattered_points(std::vector<point_3d>& points_1, std::vector<point_3d>& points_2, float & distance);
 };
 
 #endif // !CLOUD_MEASUREMENT

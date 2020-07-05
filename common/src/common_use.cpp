@@ -134,10 +134,9 @@ void export_measured_data(std::multimap<std::string, std::string>& measurement_p
 	{
 		ofile << it->first << " " << it->second << " ";
 
-		ofile << ((mv_vec[i].is_valid[0] == true) ? mv_vec[i].distance_geometry : -1) << " ";
-		ofile << ((mv_vec[i].is_valid[1] == true) ? (mv_vec[i].distance_scattered[0]) : (-1.0f)) << " ";
-		ofile << ((mv_vec[i].is_valid[1] == true) ? (mv_vec[i].distance_scattered[1]) : (-1.0f)) << " ";
-		ofile << ((mv_vec[i].is_valid[2] == true) ? mv_vec[i].angle : -1);
+		ofile << ((mv_vec[i].distance_geometrical == INVALIDVALUE) ? mv_vec[i].distance_geometrical : INVALIDVALUE) << " ";
+		ofile << ((mv_vec[i].distance_scattered == INVALIDVALUE) ? (mv_vec[i].distance_scattered) : INVALIDVALUE) << " ";
+		ofile << ((mv_vec[i].angle == INVALIDVALUE) ? mv_vec[i].angle : -1);
 
 		ofile << "\n";
 
