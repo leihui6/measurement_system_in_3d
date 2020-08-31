@@ -1,0 +1,11 @@
+overlap_estimation:1.0
+# delta, used to compute the Largest Common Pointset (LCP) between the two models
+delta:0.08
+# number of samples used for the matching
+sample_size:800
+# default : -1
+max_normal_difference:-1
+# default : -1
+max_color_distance:-1
+# maximum computation time in seconds
+max_time_seconds:60

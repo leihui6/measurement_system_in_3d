@@ -1,0 +1,16 @@
+reading_data:data/test_reading_point_cloud.txt
+
+reference_data:data/test_reference_point_cloud.txt
+
+output_folder:output
+
+label_filename:labeled_points.txt
+
+icp_configuration:data/icp_configuration.yaml
+fine_registration_filename:fine_matrix.txt
+
+4pcs_configuration:data/4pcs_configuration.txt
+coarse_registration_filename:coarse_matrix.txt
+
+measurement_filename:measurement_pairs.txt
+
