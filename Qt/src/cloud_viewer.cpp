@@ -1,33 +1,33 @@
 #include "cloud_viewer.h"
 
 cloud_viewer::cloud_viewer(osg::ref_ptr<osgViewer::Viewer> viewer)
-    :m_viewer(viewer)
-    ,is_pick_handler(false)
-    ,m_target_point_cloud(nullptr)
-    ,m_pick_handler(new PickHandler(this))
+	:m_viewer(viewer)
+	, is_pick_handler(false)
+	, m_target_point_cloud(nullptr)
+	, m_pick_handler(new PickHandler(this))
 {
-    m_viewer->addEventHandler(m_pick_handler);
+	m_viewer->addEventHandler(m_pick_handler);
 
-    // normal point cloud
-    m_point_cloud_size = 5.0f;
-    //m_point_cloud_color = osg::Vec4(0.0,0.0,0.0,1.0);
-    //m_background_color = osg::Vec4(135,206,235,1);
-    //set_background_color(m_background_color);
+	// normal point cloud
+	m_point_cloud_size = 1.0f;
+	//m_point_cloud_color = osg::Vec4(0.0,0.0,0.0,1.0);
+	//m_background_color = osg::Vec4(135,206,235,1);
+	//set_background_color(m_background_color);
 
-    // hover properties
-    m_hover_size = m_point_cloud_size*3;
-    m_hover_color = osg::Vec4(255.0,255.0,255.0,1.0);
+	// hover properties
+	m_hover_size = m_point_cloud_size * 3;
+	m_hover_color = osg::Vec4(255.0, 255.0, 255.0, 1.0);
 
-    // picking properties
-    m_picking_range = 0.1f;
-    m_picked_size = m_hover_size * 1.5f;
-    m_picked_color = osg::Vec4(255.0,0.0,0.0,1.0);
+	// picking properties
+	m_picking_range = 0.1f;
+	m_picked_size = m_point_cloud_size * 1.5f;
+	m_picked_color = osg::Vec4(255.0, 0.0, 0.0, 1.0);
 
-    // fitting line properties
-    m_line_color = osg::Vec4(0.0,255.0,0.0,1.0);
-    m_line_width = 4.0f;
+	// fitting line properties
+	m_line_color = osg::Vec4(0.0, 255.0, 0.0, 1.0);
+	m_line_width = 4.0f;
 
-    initial_visualized_node();
+	initial_visualized_node();
 }
 
 cloud_viewer::~cloud_viewer()
@@ -53,6 +53,11 @@ size_t cloud_viewer::add_point_cloud(std::vector<point_3d> & points, const std::
 
 void cloud_viewer::set_point_size(const std::string & point_cloud_name, float point_size)
 {
+	if (point_cloud_name == POINT_CLOUD)
+	{
+		set_point_cloud_size(point_size);
+	}
+
     auto it = m_node_map.find(point_cloud_name);
     if (it == m_node_map.end()) return;
 
@@ -62,9 +67,9 @@ void cloud_viewer::set_point_size(const std::string & point_cloud_name, float po
 
 void cloud_viewer::set_color(const std::string & point_cloud_name, float r,float g,float b,float w)
 {
-    osg::ref_ptr<osg::Node> node = m_node_map[point_cloud_name];
-    if(!node) return;
+	if (m_node_map.find(point_cloud_name) == m_node_map.end()) return;
 
+    osg::ref_ptr<osg::Node> node = m_node_map[point_cloud_name];
     osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array();
     colors->push_back(osg::Vec4(r/255.0f,g/255.0f,b/255.0f,w));
 
@@ -75,16 +80,16 @@ void cloud_viewer::set_color(const std::string & point_cloud_name, float r,float
 
 void cloud_viewer::set_color(const std::string & point_cloud_name, osg::Vec4 & color)
 {
-    osg::ref_ptr<osg::Node> node = m_node_map[point_cloud_name];
-    if(!node) return;
+	if (m_node_map.find(point_cloud_name) == m_node_map.end()) return;
 
-    osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array();
-    //color.set( color.r()/255.0f,color.g()/255.0f,color.b()/255.0f,color.w());
-    colors->push_back(color);
+	osg::ref_ptr<osg::Node> node = m_node_map[point_cloud_name];
+	osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array();
+	//color.set( color.r()/255.0f,color.g()/255.0f,color.b()/255.0f,color.w());
+	colors->push_back(color);
 
-    // color
-    node->asGeode()->getChild(0)->asGeometry()->setColorArray(colors.get());
-    node->asGeode()->getChild(0)->asGeometry()->setColorBinding(osg::Geometry::BIND_OVERALL);
+	// color
+	node->asGeode()->getChild(0)->asGeometry()->setColorArray(colors.get());
+	node->asGeode()->getChild(0)->asGeometry()->setColorBinding(osg::Geometry::BIND_OVERALL);
 }
 
 void cloud_viewer::set_background_color(float r, float g, float b, float w)
@@ -122,14 +127,7 @@ void cloud_viewer::remove_pick_handler()
 
 void cloud_viewer::clear_labeled_fitting()
 {
-    std::map<std::string,std::vector<point_3d>>::iterator it;
-
-    for(it = m_labeled_points_map.begin();it != m_labeled_points_map.end();++it)
-    {
-        remove_point_cloud(it->first);
-    }
-
-    m_picked_points.clear();
+	remove_point_cloud(FITTING_CLOUD);
 }
 
 void cloud_viewer::remove_point_cloud(const std::string &point_cloud_name)
@@ -138,7 +136,7 @@ void cloud_viewer::remove_point_cloud(const std::string &point_cloud_name)
     if(!scene) return;
 
     osg::ref_ptr<osg::Node> empty = new osg::Node;
-    // add new one
+    // remove when it exists
     if(m_node_map.find(point_cloud_name) != m_node_map.end())
     {
         scene->asGroup()->replaceChild(m_node_map[point_cloud_name].get(),empty);
@@ -173,6 +171,13 @@ std::map<std::string, std::vector<point_3d> > &cloud_viewer::get_labeled_points_
     return m_labeled_points_map;
 }
 
+void cloud_viewer::fit_picked_point_to_point()
+{
+	if (m_picked_points.empty()) return;
+
+	// do nothing, because it is point originally
+}
+
 void cloud_viewer::fit_picked_point_to_line()
 {
     if(m_picked_points.size() < 2) return;
@@ -185,15 +190,15 @@ void cloud_viewer::fit_picked_point_to_line()
     centroid_from_points(m_picked_points, sphere_center);
     //mean_distance_from_point_to_points(m_cloud_viewer->m_picked_points, sphere_center, sphere_r);
     longgest_distance_from_point_to_points(m_picked_points, sphere_center, sphere_r);
-    sphere_r = sphere_r + 0.2f*sphere_r;
+	sphere_r = sphere_r + 0.2f*sphere_r;
 
     // calculate the segment points for visualization
     point_3d beg_p,end_p;
     intersection_line_to_sphere(lf, sphere_center, sphere_r, beg_p, end_p);
 
-    std::string line_name = "line"+std::to_string(m_line_points.size());
-    add_line_segment(beg_p,end_p,line_name, m_line_width);
-    set_color(line_name,m_line_color);
+    //std::string line_name = "line"+std::to_string(m_line_points.size());
+	add_line_segment(beg_p, end_p, FITTING_CLOUD, m_line_width);
+	set_color(FITTING_CLOUD, m_line_color);
 }
 
 void cloud_viewer::add_line_segment(const point_3d &beg_p, const point_3d &end_p, const std::string & line_name, float line_width)
@@ -221,7 +226,13 @@ void cloud_viewer::record_labeled_points()
 {
     if(m_picked_points.empty()) return;
 
-    if(m_detection_type == DT_LINE)
+	if (m_detection_type == DT_POINT)
+	{
+		std::string labeled_name = "point" + std::to_string(m_point_points.size());
+		m_point_points.push_back(m_picked_points);
+		m_labeled_points_map[labeled_name] = m_picked_points;
+	}
+	else if(m_detection_type == DT_LINE)
     {
         if(m_picked_points.size() < 2)
         {
@@ -232,6 +243,20 @@ void cloud_viewer::record_labeled_points()
         m_line_points.push_back(m_picked_points);
         m_labeled_points_map[labeled_name] = m_picked_points;
     }
+	else if (m_detection_type == DT_PLANE)
+	{
+
+	}
+	else
+	{
+
+	}
+	show_warning("selection information", std::to_string(m_picked_points.size()) + " points was selected.");
+}
+
+DETECT_TYPE cloud_viewer::get_current_detection_type()
+{
+	return m_detection_type;
 }
 
 void cloud_viewer::initial_visualized_node()
@@ -264,6 +289,16 @@ void cloud_viewer::update(const std::string & point_cloud_name,osg::ref_ptr<osg:
     //std::cout << m_node_map.size()<<std::endl;
 }
 
+void cloud_viewer::set_point_cloud_size(float size)
+{
+	m_point_cloud_size = size;
+}
+
+float cloud_viewer::get_point_cloud_size()
+{
+	return m_point_cloud_size;
+}
+
 float cloud_viewer::get_picking_range() const
 {
     return m_picking_range;
@@ -284,9 +319,19 @@ std::vector<point_3d> &cloud_viewer::get_picked_points()
     return m_picked_points;
 }
 
+void cloud_viewer::set_picked_color(const osg::Vec4 & c)
+{
+	m_picked_color = c;
+}
+
 osg::Vec4 &cloud_viewer::get_hover_color()
 {
     return m_hover_color;
+}
+
+void cloud_viewer::set_hover_color(const osg::Vec4 & c)
+{
+	m_hover_color = c;
 }
 
 float cloud_viewer::get_hover_size() const
@@ -340,16 +385,16 @@ bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapt
     }
     //std::cout << m_cloud_viewer.get_picked_points().size()<<std::endl;
 
-    // picked points
-    m_cloud_viewer->add_point_cloud(m_cloud_viewer->get_picked_points(),PICKED_POINTS,1);
-    m_cloud_viewer->set_point_size(PICKED_POINTS,m_cloud_viewer->get_picked_size());
-    m_cloud_viewer->set_color(PICKED_POINTS,m_cloud_viewer->get_picked_color());
+	// picked points
+	m_cloud_viewer->add_point_cloud(m_cloud_viewer->get_picked_points(), PICKED_POINTS, 1);
+	m_cloud_viewer->set_point_size(PICKED_POINTS, 7 * m_cloud_viewer->get_point_cloud_size());
+	m_cloud_viewer->set_color(PICKED_POINTS, m_cloud_viewer->get_picked_color());
 
-    // hover point
-    std::vector<point_3d> hover_point{picked_point};
-    m_cloud_viewer->add_point_cloud(hover_point,HOVER_POINT,1);
-    m_cloud_viewer->set_point_size(HOVER_POINT,m_cloud_viewer->get_hover_size());
-    m_cloud_viewer->set_color(HOVER_POINT,m_cloud_viewer->get_hover_color());
+	// hover point
+	std::vector<point_3d> hover_point{ picked_point };
+	m_cloud_viewer->add_point_cloud(hover_point, HOVER_POINT, 1);
+	m_cloud_viewer->set_point_size(HOVER_POINT, 7 * m_cloud_viewer->get_point_cloud_size());
+	m_cloud_viewer->set_color(HOVER_POINT, m_cloud_viewer->get_hover_color());
 
     return false;
 }

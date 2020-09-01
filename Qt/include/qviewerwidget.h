@@ -15,12 +15,12 @@
 #include "cloud_viewer.h"
 
 class cloud_viewer;
-class PickHandler;
+class PickHandler; 
+enum  DETECT_TYPE;
 
 class QViewerWidget : public QWidget
 {
 public:
-
     QViewerWidget(const QRect &geometry);
 
     virtual ~QViewerWidget();
@@ -48,6 +48,7 @@ public:
 
     void set_target_point_cloud(std::vector<point_3d> &points);
 
+	void fit_picked_point_to_point();
     void fit_picked_point_to_line();
 
     void get_labeled_points_map(std::map<std::string,std::vector<point_3d>> & labeled_points_map);
@@ -55,7 +56,11 @@ public:
     void record_labeled_points();
     void clear_labeled_fitting();
 
-    void add_lines(std::vector<point_3d> & points, const std::string line_name, float line_width);
+    //void add_lines(std::vector<point_3d> & points, const std::string line_name, float line_width);
+
+	void get_picked_points(std::vector<point_3d>& picked_points);
+
+	DETECT_TYPE get_current_detection_type();
 
 protected:
     osg::ref_ptr<osg::Group> m_scene;

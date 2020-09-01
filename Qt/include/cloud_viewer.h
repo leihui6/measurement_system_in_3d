@@ -18,6 +18,8 @@
 // please use these name as a point cloud unique id
 #define HOVER_POINT "hover_point_cloud"
 #define PICKED_POINTS "picked_point_cloud"
+#define POINT_CLOUD "point_cloud"
+#define FITTING_CLOUD "fitting_point_cloud"
 
 enum DETECT_TYPE
 {
@@ -67,7 +69,6 @@ public:
 	void set_pick_handle(bool is_open);
 	bool get_pick_handle_status();
 
-
     // get labeled points
     std::map<std::string, std::vector<point_3d> > &get_labeled_points_map();
 
@@ -83,6 +84,10 @@ private:
 	std::map<std::string, osg::ref_ptr<osg::Node>> m_node_map;
 
 	// normal point cloud properties
+
+public:
+	void set_point_cloud_size(float size);
+	float get_point_cloud_size();
 private:
 	float m_point_cloud_size;
 	osg::Vec4 m_point_cloud_color;
@@ -94,16 +99,18 @@ public:
 	osg::Vec4 & get_picked_color();
 	float get_picked_size() const;
 	std::vector<point_3d> & get_picked_points();
+	void set_picked_color(const osg::Vec4 & c);
 private:
-	std::vector<point_3d> m_picked_points;
+	float m_picked_size;
 	float m_picking_range;
 	osg::Vec4 m_picked_color;
-	float m_picked_size;
+	std::vector<point_3d> m_picked_points;
 	osg::ref_ptr<PickHandler> m_pick_handler;
 
 	// picked points properties
 public:
 	osg::Vec4 & get_hover_color();
+	void set_hover_color(const osg::Vec4 & c);
 	float get_hover_size() const;
 private:
 	osg::Vec4 m_hover_color;
@@ -111,13 +118,17 @@ private:
 
     // fitting
 public:
+	void fit_picked_point_to_point();
     void fit_picked_point_to_line();
     void add_line_segment(const point_3d & beg_p, const point_3d & end_p, const std::string & line_name, float line_width);
     void set_current_detection_type(DETECT_TYPE dt);
     void record_labeled_points();
+	DETECT_TYPE get_current_detection_type();
 private:
     cloud_fitting m_cf;
     DETECT_TYPE m_detection_type;
+	// will be increased automatically and work in current env
+	std::vector<std::vector<point_3d>> m_point_points;
     std::vector<std::vector<point_3d>> m_line_points;
     osg::Vec4 m_line_color;
     float m_line_width;

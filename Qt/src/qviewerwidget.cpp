@@ -84,9 +84,20 @@ void QViewerWidget::clear_point_cloud()
     m_cloud_viewer->remove_point_cloud(PICKED_POINTS);
 }
 
-void QViewerWidget::set_color(const std::string & point_cloud_name, float r,float g,float b,float w)
+void QViewerWidget::set_color(const std::string & point_cloud_name, float r, float g, float b, float w)
 {
-    m_cloud_viewer->set_color(point_cloud_name,r,g,b,w);
+	if (point_cloud_name == HOVER_POINT)
+	{
+		m_cloud_viewer->set_hover_color(osg::Vec4(r / 255.0, g / 255.0, b / 255.0, w));
+	}
+	else if (point_cloud_name == PICKED_POINTS)
+	{
+		m_cloud_viewer->set_picked_color(osg::Vec4(r / 255.0, g / 255.0, b / 255.0, w));
+	}
+	else
+	{
+		m_cloud_viewer->set_color(point_cloud_name, r, g, b, w);
+	}
 }
 
 void QViewerWidget::set_point_size(const std::string & point_cloud_name, float point_size)
@@ -102,6 +113,12 @@ void QViewerWidget::set_background_color(float r,float g,float b, float w)
 void QViewerWidget::set_target_point_cloud(std::vector<point_3d> &points)
 {
     m_cloud_viewer->set_target_point_cloud(points);
+}
+
+void QViewerWidget::fit_picked_point_to_point()
+{
+	m_cloud_viewer->set_current_detection_type(DT_POINT);
+	m_cloud_viewer->fit_picked_point_to_point();
 }
 
 void QViewerWidget::fit_picked_point_to_line()
@@ -123,6 +140,16 @@ void QViewerWidget::record_labeled_points()
 void QViewerWidget::clear_labeled_fitting()
 {
     m_cloud_viewer->clear_labeled_fitting();
+}
+
+void QViewerWidget::get_picked_points(std::vector<point_3d>& picked_points)
+{
+	picked_points = m_cloud_viewer->get_picked_points();
+}
+
+DETECT_TYPE QViewerWidget::get_current_detection_type()
+{
+	return m_cloud_viewer->get_current_detection_type();
 }
 
 osgQt::GraphicsWindowQt *QViewerWidget::createGraphicsWindow(const QRect &geometry)

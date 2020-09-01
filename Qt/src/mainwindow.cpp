@@ -31,8 +31,6 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(ui->actionClean, &QAction::triggered, this, &MainWindow::clean);
 	//connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::open);
 
-	m_point_cloud_str = "point_cloud";
-
 	initialize_folder();
 
 	initialize_widget();
@@ -52,8 +50,10 @@ void MainWindow::paintEvent(QPaintEvent *)
 
 size_t MainWindow::write_log(const std::string log)
 {
+	std::string before_log = ">", postfix = "\n";
+
 	ui->textEdit->moveCursor(QTextCursor::End);
-	ui->textEdit->insertPlainText(QString::fromStdString(log + "\n"));
+	ui->textEdit->insertPlainText(QString::fromStdString(before_log + log + postfix));
 	ui->textEdit->moveCursor(QTextCursor::End);
 
 	return size_t(ui->textEdit->toPlainText().size());
@@ -107,13 +107,58 @@ void MainWindow::on_btn_cancel_labeling_clicked()
 	m_viewer_widget->record_labeled_points();
 	m_viewer_widget->clear_labeled_fitting();
 
+	DETECT_TYPE dt;
+	dt = m_viewer_widget->get_current_detection_type();
+
+	std::string text = "recorded as ";
+	if (dt == DETECT_TYPE::DT_POINT)
+	{
+		text += "Point";
+	}
+	else if (dt == DETECT_TYPE::DT_LINE)
+	{
+		text += "Line";
+	}
+	else if (dt == DETECT_TYPE::DT_PLANE)
+	{
+		text += "Plane";
+	}
+	else if (dt == DETECT_TYPE::DT_CYLINDER)
+	{
+		text += "Cylinder";
+	}
+	else
+	{
+		text += "Unknown"
+	}
+	write_log(text);
+
 	ui->btn_start_labeling->setDisabled(false);
 	ui->btn_cancel_labeling->setDisabled(true);
 }
 
+void MainWindow::on_btn_point_labeling_clicked()
+{
+	write_log("selected: point");
+
+	m_viewer_widget->fit_picked_point_to_point();
+}
+
 void MainWindow::on_btn_line_labeling_clicked()
 {
+	write_log("selected: line");
+
 	m_viewer_widget->fit_picked_point_to_line();
+}
+
+void MainWindow::on_btn_plane_labeling_clicked()
+{
+	write_log("selected: plane");
+}
+
+void MainWindow::on_btn_cylinder_labeling_clicked()
+{
+	write_log("selected: cylinder");
 }
 
 
@@ -138,9 +183,12 @@ void MainWindow::initialize_widget()
 
 	// initial back and front color
 	ui->pushButton_back_color->setStyleSheet("background: rgb(135,206,235)");
-	this->m_viewer_widget->set_background_color(135, 206, 235, 1);
 	ui->pushButton_front_color->setStyleSheet("background: rgb(0,0,0)");
-	//this->m_viewer_widget->set_background_color(135, 206, 235, 1);
+    ui->pushButton_hover_color->setStyleSheet("background: rgb(255,255,255)");
+    ui->pushButton_picked_color->setStyleSheet("background: rgb(255,0,0)");
+    ui->pushButton_fitting_color->setStyleSheet("background: rgb(0,255,0)");
+
+	m_viewer_widget->set_background_color(135, 206, 235, 1);
 }
 
 void MainWindow::on_btn_export_label_infor_clicked()
@@ -171,7 +219,25 @@ void MainWindow::on_btn_export_label_infor_clicked()
 
 void MainWindow::on_pushButton_check_list_clicked()
 {
+	std::map<std::string, std::vector<point_3d>> labeled_points_map;
 
+	this->m_viewer_widget->get_labeled_points_map(labeled_points_map);
+
+	if (labeled_points_map.empty())
+	{
+		write_log("no labeled points");
+	}
+
+	std::map<std::string, std::vector<point_3d>>::iterator it;
+
+	write_log("all labeling information are shown as below:");
+
+	for (it = labeled_points_map.begin(); it != labeled_points_map.end(); ++it)
+	{
+		write_log(it->first + " : " + std::to_string(it->second.size()));
+	}
+
+	write_log("done");
 }
 
 void MainWindow::on_actionSettings_triggered()
@@ -244,7 +310,7 @@ void MainWindow::on_pushButton_load_data_clicked()
     {
         write_log("failed to read: " + reference_data);
     }
-	m_viewer_widget->add_point_cloud(m_target_cloud_point, m_point_cloud_str, 1.0);
+	m_viewer_widget->add_point_cloud(m_target_cloud_point, POINT_CLOUD, 1.0);
 	m_viewer_widget->set_target_point_cloud(m_target_cloud_point);
 }
 
@@ -272,7 +338,7 @@ void MainWindow::on_spinBox_show_axis_valueChanged(const QString &arg1)
 void MainWindow::on_spinBox_point_size_valueChanged(const QString &arg1)
 {
     float point_size = float(ui->spinBox_point_size->value());
-	this->m_viewer_widget->set_point_size(m_point_cloud_str, point_size);
+	this->m_viewer_widget->set_point_size(POINT_CLOUD, point_size);
     write_log("set point size: " + arg1.toStdString());
 }
 
@@ -304,7 +370,7 @@ void MainWindow::on_pushButton_front_color_clicked()
 		r = color.red();
 		g = color.green();
 		b = color.blue();
-		this->m_viewer_widget->set_color(m_point_cloud_str, r, g, b, 1);
+		this->m_viewer_widget->set_color(POINT_CLOUD, r, g, b, 1);
 
 		QString html_content = "background: rgb(" + QString::number(int(r)) + "," + QString::number(int(g)) + "," + QString::number(int(b)) + ")";
 		ui->pushButton_front_color->setStyleSheet(html_content);
@@ -315,4 +381,70 @@ void MainWindow::on_pushButton_front_color_clicked()
 	{
 		write_log("picked color is invalid");
 	}
+}
+
+void MainWindow::on_pushButton_hover_color_clicked()
+{
+    QColor color = QColorDialog::getColor(Qt::yellow, this);
+    if (color.isValid())
+    {
+        float r, g, b;
+        r = color.red();
+        g = color.green();
+        b = color.blue();
+        this->m_viewer_widget->set_color(HOVER_POINT, r, g, b, 1);
+
+        QString html_content = "background: rgb(" + QString::number(int(r)) + "," + QString::number(int(g)) + "," + QString::number(int(b)) + ")";
+        ui->pushButton_hover_color->setStyleSheet(html_content);
+
+        write_log("set hover color: " + html_content.toStdString());
+    }
+    else
+    {
+        write_log("picked color is invalid");
+    }
+}
+
+void MainWindow::on_pushButton_picked_color_clicked()
+{
+    QColor color = QColorDialog::getColor(Qt::yellow, this);
+    if (color.isValid())
+    {
+        float r, g, b;
+        r = color.red();
+        g = color.green();
+        b = color.blue();
+        this->m_viewer_widget->set_color(PICKED_POINTS, r, g, b, 1);
+
+        QString html_content = "background: rgb(" + QString::number(int(r)) + "," + QString::number(int(g)) + "," + QString::number(int(b)) + ")";
+        ui->pushButton_picked_color->setStyleSheet(html_content);
+
+        write_log("set picked color: " + html_content.toStdString());
+    }
+    else
+    {
+        write_log("picked color is invalid");
+    }
+}
+
+void MainWindow::on_pushButton_fitting_color_clicked()
+{
+    QColor color = QColorDialog::getColor(Qt::yellow, this);
+    if (color.isValid())
+    {
+        float r, g, b;
+        r = color.red();
+        g = color.green();
+        b = color.blue();
+        this->m_viewer_widget->set_color(FITTING_CLOUD, r, g, b, 1);
+
+        QString html_content = "background: rgb(" + QString::number(int(r)) + "," + QString::number(int(g)) + "," + QString::number(int(b)) + ")";
+        ui->pushButton_fitting_color->setStyleSheet(html_content);
+
+        write_log("set fitting color: " + html_content.toStdString());
+    }
+    else
+    {
+        write_log("picked color is invalid");
+    }
 }

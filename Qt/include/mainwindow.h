@@ -29,7 +29,6 @@ public:
 private:
     Ui::MainWindow *ui;
 
-    std::string m_point_cloud_str;
     dialog_settings * dialog_settings_ui;
 
     cloud_io ci;
@@ -54,7 +53,13 @@ private slots:
 
     void on_btn_cancel_labeling_clicked();
 
+	void on_btn_point_labeling_clicked();
+
     void on_btn_line_labeling_clicked();
+
+	void on_btn_plane_labeling_clicked();
+
+	void on_btn_cylinder_labeling_clicked();
 
     void on_btn_export_label_infor_clicked();
 
@@ -79,6 +84,12 @@ private slots:
     void on_pushButton_front_color_clicked();
 
     void on_pushButton_check_list_clicked();
+
+    void on_pushButton_hover_color_clicked();
+
+    void on_pushButton_picked_color_clicked();
+
+    void on_pushButton_fitting_color_clicked();
 
 private:
     void initialize_widget();
