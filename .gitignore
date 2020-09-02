@@ -12,7 +12,7 @@
 *.vcxproj
 *.filters
 *.exe
-
+*.sln
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

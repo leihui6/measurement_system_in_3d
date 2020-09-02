@@ -118,12 +118,14 @@ void QViewerWidget::set_target_point_cloud(std::vector<point_3d> &points)
 void QViewerWidget::fit_picked_point_to_point()
 {
 	m_cloud_viewer->set_current_detection_type(DT_POINT);
+    m_cloud_viewer->remove_point_cloud(FITTING_CLOUD);
 	m_cloud_viewer->fit_picked_point_to_point();
 }
 
 void QViewerWidget::fit_picked_point_to_line()
 {
     m_cloud_viewer->set_current_detection_type(DT_LINE);
+    m_cloud_viewer->remove_point_cloud(FITTING_CLOUD);
     m_cloud_viewer->fit_picked_point_to_line();
 }
 

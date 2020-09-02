@@ -173,9 +173,12 @@ std::map<std::string, std::vector<point_3d> > &cloud_viewer::get_labeled_points_
 
 void cloud_viewer::fit_picked_point_to_point()
 {
-	if (m_picked_points.empty()) return;
+    if (m_picked_points.empty()) return;
 
-	// do nothing, because it is point originally
+    std::vector<point_3d> fitting_point;
+    fitting_point = m_picked_points;
+    add_point_cloud(fitting_point, FITTING_CLOUD, 1);
+    set_color(FITTING_CLOUD, m_line_color);
 }
 
 void cloud_viewer::fit_picked_point_to_line()
@@ -198,7 +201,7 @@ void cloud_viewer::fit_picked_point_to_line()
 
     //std::string line_name = "line"+std::to_string(m_line_points.size());
 	add_line_segment(beg_p, end_p, FITTING_CLOUD, m_line_width);
-	set_color(FITTING_CLOUD, m_line_color);
+    set_color(FITTING_CLOUD, m_line_color);
 }
 
 void cloud_viewer::add_line_segment(const point_3d &beg_p, const point_3d &end_p, const std::string & line_name, float line_width)

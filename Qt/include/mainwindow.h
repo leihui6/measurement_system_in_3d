@@ -75,7 +75,7 @@ private slots:
 
     void on_checkBox_show_axis_stateChanged(int arg1);
 
-    void on_spinBox_show_axis_valueChanged(const QString &arg1);
+    void on_doubleSpinBox_show_axis_valueChanged(const QString &arg1);
 
     void on_spinBox_point_size_valueChanged(const QString &arg1);
 

@@ -129,7 +129,7 @@ void MainWindow::on_btn_cancel_labeling_clicked()
 	}
 	else
 	{
-		text += "Unknown"
+        text += "Unknown";
 	}
 	write_log(text);
 
@@ -330,7 +330,7 @@ void MainWindow::on_checkBox_show_axis_stateChanged(int arg1)
 	}
 }
 
-void MainWindow::on_spinBox_show_axis_valueChanged(const QString &arg1)
+void MainWindow::on_doubleSpinBox_show_axis_valueChanged(const QString &arg1)
 {
     on_checkBox_show_axis_stateChanged(arg1.toInt());
 }

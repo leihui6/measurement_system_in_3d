@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1077</width>
+    <width>1168</width>
     <height>688</height>
    </rect>
   </property>
@@ -266,16 +266,16 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="btn_plane_labeling">
+              <widget class="QPushButton" name="btn_line_labeling">
                <property name="text">
-                <string>plane</string>
+                <string>line</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="btn_line_labeling">
+              <widget class="QPushButton" name="btn_plane_labeling">
                <property name="text">
-                <string>line</string>
+                <string>plane</string>
                </property>
               </widget>
              </item>
@@ -380,8 +380,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1077</width>
-     <height>19</height>
+     <width>1168</width>
+     <height>23</height>
     </rect>
    </property>
    <property name="font">

@@ -332,14 +332,24 @@ void point_along_with_vector_within_dis(point_3d & point, Eigen::Vector3f & line
 				{
 					tmp_p.push_back(point_3d(x[i], y[j], z[k]));
 				}
+                if (x[0] == x[1]) ++i;
+                if (y[0] == y[1]) ++j;
+                if (z[0] == z[1]) ++k;
 			}
 		}
 	}
-	if (tmp_p.size() > 1)
-	{
-		result_p1 = tmp_p[0];
-		result_p2 = tmp_p[1];
-	}
+
+    if (tmp_p.size() == 2)
+    {
+        result_p1 = tmp_p[0];
+        result_p2 = tmp_p[1];
+    }
+    else
+    {
+        //std::cout << "[warning] point_along_with_vector_within_dis" << std::endl;
+        result_p1 = tmp_p[0];
+        result_p2 = tmp_p[1];
+    }
 }
 
 bool is_parallel_vector(const Eigen::Vector3f & v1, const Eigen::Vector3f & v2)
