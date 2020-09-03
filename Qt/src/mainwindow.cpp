@@ -101,11 +101,8 @@ void MainWindow::on_btn_start_labeling_clicked()
 
 void MainWindow::on_btn_cancel_labeling_clicked()
 {
-	m_viewer_widget->remove_pick_handler();
-	m_viewer_widget->clear_point_cloud();
-
-	m_viewer_widget->record_labeled_points();
-	m_viewer_widget->clear_labeled_fitting();
+    m_viewer_widget->remove_pick_handler();
+    m_viewer_widget->record_labeled_points();
 
 	DETECT_TYPE dt;
 	dt = m_viewer_widget->get_current_detection_type();
@@ -133,6 +130,8 @@ void MainWindow::on_btn_cancel_labeling_clicked()
 	}
 	write_log(text);
 
+    m_viewer_widget->clear_labeled_fitting();
+    m_viewer_widget->clear_point_cloud();
 	ui->btn_start_labeling->setDisabled(false);
 	ui->btn_cancel_labeling->setDisabled(true);
 }
@@ -154,6 +153,8 @@ void MainWindow::on_btn_line_labeling_clicked()
 void MainWindow::on_btn_plane_labeling_clicked()
 {
 	write_log("selected: plane");
+
+    m_viewer_widget->fit_picked_point_to_plane();
 }
 
 void MainWindow::on_btn_cylinder_labeling_clicked()

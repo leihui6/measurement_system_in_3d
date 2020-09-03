@@ -24,8 +24,10 @@ cloud_viewer::cloud_viewer(osg::ref_ptr<osgViewer::Viewer> viewer)
 	m_picked_color = osg::Vec4(255.0, 0.0, 0.0, 1.0);
 
 	// fitting line properties
-	m_line_color = osg::Vec4(0.0, 255.0, 0.0, 1.0);
+    //m_line_color = osg::Vec4(0.0, 255.0, 0.0, 1.0);
 	m_line_width = 4.0f;
+
+    m_fitting_color = osg::Vec4(0.0, 255.0, 0.0, 1.0);
 
 	initial_visualized_node();
 }
@@ -142,6 +144,11 @@ void cloud_viewer::remove_point_cloud(const std::string &point_cloud_name)
         scene->asGroup()->replaceChild(m_node_map[point_cloud_name].get(),empty);
         m_node_map[point_cloud_name] = empty;
     }
+
+    if (point_cloud_name == PICKED_POINTS)
+    {
+        m_picked_points.clear();
+    }
 }
 
 bool cloud_viewer::hide_point_cloud(const std::string &point_cloud_name)
@@ -178,7 +185,7 @@ void cloud_viewer::fit_picked_point_to_point()
     std::vector<point_3d> fitting_point;
     fitting_point = m_picked_points;
     add_point_cloud(fitting_point, FITTING_CLOUD, 1);
-    set_color(FITTING_CLOUD, m_line_color);
+    set_color(FITTING_CLOUD, m_fitting_color);
 }
 
 void cloud_viewer::fit_picked_point_to_line()
@@ -201,7 +208,40 @@ void cloud_viewer::fit_picked_point_to_line()
 
     //std::string line_name = "line"+std::to_string(m_line_points.size());
 	add_line_segment(beg_p, end_p, FITTING_CLOUD, m_line_width);
-    set_color(FITTING_CLOUD, m_line_color);
+    set_color(FITTING_CLOUD, m_fitting_color);
+}
+
+void cloud_viewer::fit_picked_point_to_plane()
+{
+    if(m_picked_points.size() < 3) return;
+
+    plane_func_3d pf;
+    m_cf.fitting_plane_3d_linear_least_squares(m_picked_points, pf);
+
+    point_3d min_p, max_p;
+
+    max_min_point_3d_vec(m_picked_points, min_p, max_p);
+
+    pedalpoint_point_to_plane(min_p, pf, min_p);
+
+    pedalpoint_point_to_plane(max_p, pf, max_p);
+
+    // using four points to draw a biggest rectangle
+    Eigen::Vector3f diagonal, line_direction;
+    diagonal = Eigen::Vector3f(max_p.x - min_p.x, max_p.y - min_p.y, max_p.z - min_p.z);
+    line_direction = diagonal.cross(Eigen::Vector3f(pf.a, pf.b, pf.c));
+
+    point_3d mid_point, corner_p1, corner_p2;
+    mid_point = point_3d((min_p.x + max_p.x) / 2, (min_p.y + max_p.y) / 2, (min_p.z + max_p.z) / 2);
+    float half_dis = diagonal.norm() / 2;
+
+    point_along_with_vector_within_dis(mid_point, line_direction, corner_p1, corner_p2, half_dis);
+
+    std::vector<point_3d> biggest_rectangle{ min_p,max_p,corner_p1,corner_p2 }, drawable_points_ordered;
+    make_points_ordered_by_distance(biggest_rectangle, drawable_points_ordered);
+
+    add_plane_square(drawable_points_ordered, FITTING_CLOUD);
+    set_color(FITTING_CLOUD, m_fitting_color);
 }
 
 void cloud_viewer::add_line_segment(const point_3d &beg_p, const point_3d &end_p, const std::string & line_name, float line_width)
@@ -218,6 +258,25 @@ void cloud_viewer::add_line_segment(const point_3d &beg_p, const point_3d &end_p
     node->addChild(geometry);
 
     update(line_name,node);
+}
+
+void cloud_viewer::add_plane_square(std::vector<point_3d> &plane_square, const std::string plane_name)
+{
+    if (plane_square.empty())
+    {
+        return;
+    }
+
+    osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+    points_to_geometry_node(plane_square, geometry, 1.0f);
+    geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::QUADS, 0, int(plane_square.size())));
+    geometry->getOrCreateStateSet()->setMode(GL_BLEND, osg::StateAttribute::ON);
+    geometry->getOrCreateStateSet()->setMode(GL_DEPTH_TEST, osg::StateAttribute::ON);
+
+    osg::ref_ptr<osg::Geode> node = new osg::Geode;
+    node->addChild(geometry);
+
+    update(plane_name,node);
 }
 
 void cloud_viewer::set_current_detection_type(DETECT_TYPE dt)
@@ -248,7 +307,14 @@ void cloud_viewer::record_labeled_points()
     }
 	else if (m_detection_type == DT_PLANE)
 	{
-
+        if(m_picked_points.size() < 3)
+        {
+            show_warning("Detection Plane","Picked points are not enough, please pick more points");
+            return;
+        }
+        std::string labeled_name = "plane"+std::to_string(m_line_points.size());
+        m_line_points.push_back(m_picked_points);
+        m_labeled_points_map[labeled_name] = m_picked_points;
 	}
 	else
 	{
@@ -259,7 +325,12 @@ void cloud_viewer::record_labeled_points()
 
 DETECT_TYPE cloud_viewer::get_current_detection_type()
 {
-	return m_detection_type;
+    return m_detection_type;
+}
+
+void cloud_viewer::set_fitting_color(const osg::Vec4 &c)
+{
+    m_fitting_color = c;
 }
 
 void cloud_viewer::initial_visualized_node()

@@ -50,6 +50,7 @@ public:
 
 	void fit_picked_point_to_point();
     void fit_picked_point_to_line();
+    void fit_picked_point_to_plane();
 
     void get_labeled_points_map(std::map<std::string,std::vector<point_3d>> & labeled_points_map);
 	

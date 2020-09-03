@@ -18,6 +18,7 @@
 // please use these name as a point cloud unique id
 #define HOVER_POINT "hover_point_cloud"
 #define PICKED_POINTS "picked_point_cloud"
+
 #define POINT_CLOUD "point_cloud"
 #define FITTING_CLOUD "fitting_point_cloud"
 
@@ -120,18 +121,25 @@ private:
 public:
 	void fit_picked_point_to_point();
     void fit_picked_point_to_line();
+    void fit_picked_point_to_plane();
+
     void add_line_segment(const point_3d & beg_p, const point_3d & end_p, const std::string & line_name, float line_width);
+    void add_plane_square(std::vector<point_3d> & plane_square, const std::string plane_name);
+
     void set_current_detection_type(DETECT_TYPE dt);
     void record_labeled_points();
 	DETECT_TYPE get_current_detection_type();
+
+    void set_fitting_color(const osg::Vec4 & c);
 private:
     cloud_fitting m_cf;
     DETECT_TYPE m_detection_type;
 	// will be increased automatically and work in current env
 	std::vector<std::vector<point_3d>> m_point_points;
     std::vector<std::vector<point_3d>> m_line_points;
-    osg::Vec4 m_line_color;
+    //osg::Vec4 m_line_color;
     float m_line_width;
+    osg::Vec4 m_fitting_color;
 
     std::map<std::string,std::vector<point_3d>> m_labeled_points_map;
 };

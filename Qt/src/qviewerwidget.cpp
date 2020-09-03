@@ -94,7 +94,11 @@ void QViewerWidget::set_color(const std::string & point_cloud_name, float r, flo
 	{
 		m_cloud_viewer->set_picked_color(osg::Vec4(r / 255.0, g / 255.0, b / 255.0, w));
 	}
-	else
+    else if (point_cloud_name == FITTING_CLOUD)
+    {
+        m_cloud_viewer->set_fitting_color(osg::Vec4(r / 255.0, g / 255.0, b / 255.0, 0.5));
+    }
+    else
 	{
 		m_cloud_viewer->set_color(point_cloud_name, r, g, b, w);
 	}
@@ -127,6 +131,13 @@ void QViewerWidget::fit_picked_point_to_line()
     m_cloud_viewer->set_current_detection_type(DT_LINE);
     m_cloud_viewer->remove_point_cloud(FITTING_CLOUD);
     m_cloud_viewer->fit_picked_point_to_line();
+}
+
+void QViewerWidget::fit_picked_point_to_plane()
+{
+    m_cloud_viewer->set_current_detection_type(DT_PLANE);
+    m_cloud_viewer->remove_point_cloud(FITTING_CLOUD);
+    m_cloud_viewer->fit_picked_point_to_plane();
 }
 
 void QViewerWidget::get_labeled_points_map(std::map<std::string,std::vector<point_3d>> & labeled_points_map)

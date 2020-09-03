@@ -317,7 +317,7 @@ void point_along_with_vector_within_dis(point_3d & point, Eigen::Vector3f & line
 
 	Eigen::Vector3f v;
 
-	std::vector<point_3d> tmp_p;
+	std::vector<point_3d> tmp_p_vec;
 
 	for (size_t i = 0; i < 2; i++)
 	{
@@ -325,30 +325,36 @@ void point_along_with_vector_within_dis(point_3d & point, Eigen::Vector3f & line
 		{
 			for (size_t k = 0; k < 2; k++)
 			{
-				v[0] = x[i] - point.x;
-				v[1] = y[j] - point.y;
-				v[2] = z[k] - point.z;
+				point_3d possible_p(x[i], y[j], z[k]);
+
+				v[0] = possible_p.x - point.x;
+				v[1] = possible_p.y - point.y;
+				v[2] = possible_p.z - point.z;
 				if (is_parallel_vector(line_dir, v))
 				{
-					tmp_p.push_back(point_3d(x[i], y[j], z[k]));
+					// insert without same one 
+					bool find_same_one = false;
+					for (auto &tmp_p : tmp_p_vec)
+						if (possible_p.x == tmp_p.x && possible_p.y == tmp_p.y && possible_p.z == tmp_p.z)
+						{
+							find_same_one = true;
+						}
+					if (!find_same_one) tmp_p_vec.push_back(possible_p);
 				}
-                if (x[0] == x[1]) ++i;
-                if (y[0] == y[1]) ++j;
-                if (z[0] == z[1]) ++k;
 			}
 		}
 	}
 
-    if (tmp_p.size() == 2)
+    if (tmp_p_vec.size() == 2)
     {
-        result_p1 = tmp_p[0];
-        result_p2 = tmp_p[1];
+        result_p1 = tmp_p_vec[0];
+        result_p2 = tmp_p_vec[1];
     }
     else
     {
         //std::cout << "[warning] point_along_with_vector_within_dis" << std::endl;
-        result_p1 = tmp_p[0];
-        result_p2 = tmp_p[1];
+        result_p1 = tmp_p_vec[0];
+        result_p2 = tmp_p_vec[1];
     }
 }
 
@@ -360,4 +366,112 @@ bool is_parallel_vector(const Eigen::Vector3f & v1, const Eigen::Vector3f & v2)
 		return true;
 	}
 	return false;
+}
+
+void max_min_point_3d_vec(std::vector<point_3d> &points, point_3d &min_p, point_3d &max_p)
+{
+    if (points.empty())
+    {
+        return ;
+    }
+
+    // [0]:x [1]:y [2]:z
+    std::vector<float>
+            min_xyz({ points[0].x, points[1].y, points[2].z }),
+
+            max_xyz({ points[0].x, points[1].y, points[2].z });
+
+    //std::cout << min_xyz[0] << " " << min_xyz[1] << " " << min_xyz[2] << std::endl;
+
+    for (size_t i = 0; i < points.size(); ++i)
+    {
+        point_3d & p = points[i];
+
+        if (p.x > max_xyz[0])
+        {
+            max_xyz[0] = p.x;
+        }
+        if (p.x < min_xyz[0])
+        {
+            min_xyz[0] = p.x;
+        }
+
+        if (p.y > max_xyz[1])
+        {
+            max_xyz[1] = p.y;
+        }
+        if (p.y < min_xyz[1])
+        {
+            min_xyz[1] = p.y;
+        }
+
+        if (p.z > max_xyz[2])
+        {
+            max_xyz[2] = p.z;
+        }
+        if (p.z < min_xyz[2])
+        {
+            min_xyz[2] = p.z;
+        }
+    }
+
+    min_p.set_xyz(min_xyz[0], min_xyz[1], min_xyz[2]);
+
+    max_p.set_xyz(max_xyz[0], max_xyz[1], max_xyz[2]);
+}
+
+void pedalpoint_point_to_plane(const point_3d &point, const plane_func_3d &plane_func, point_3d &pedalpoint)
+{
+    float
+            t = (point.x * plane_func.a + point.y * plane_func.b + point.z * plane_func.c + plane_func.d)
+            / (plane_func.a*plane_func.a + plane_func.b*plane_func.b + plane_func.c*plane_func.c);
+
+    pedalpoint.x = point.x - plane_func.a * t;
+    pedalpoint.y = point.y - plane_func.b * t;
+    pedalpoint.z = point.z - plane_func.c * t;
+}
+
+void make_points_ordered_by_distance(std::vector<point_3d> &points, std::vector<point_3d> &ordered_points)
+{
+    if (points.empty())
+    {
+        return;
+    }
+
+    std::vector<bool> visited(points.size(), false);
+
+    ordered_points.push_back(points[0]);
+
+    visited[0] = true;
+
+    for (size_t i = 0; i < ordered_points.size(); ++i)
+    {
+        float min_dis = FLT_MAX;
+
+        int min_dis_i = -1;
+
+        for (size_t j = 0; j < points.size(); ++j)
+        {
+            if (visited[j] == false)
+            {
+                float dis = 0.0;
+
+                distance_point_to_point(ordered_points[i], points[j], dis);
+
+                if (dis < min_dis)
+                {
+                    min_dis_i = j;
+
+                    min_dis = dis;
+                }
+            }
+        }
+
+        if (min_dis_i != -1)
+        {
+            visited[min_dis_i] = true;
+
+            ordered_points.push_back(points[min_dis_i]);
+        }
+    }
 }

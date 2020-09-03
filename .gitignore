@@ -15,6 +15,7 @@
 *.sln
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
+*.txt
 
 # Mono auto generated files
 mono_crash.*

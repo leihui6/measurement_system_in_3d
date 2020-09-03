@@ -101,10 +101,15 @@ void distance_point_to_point(const point_3d & point_1, const point_3d & point_2,
 void longgest_distance_from_point_to_points(std::vector<point_3d>& points, point_3d & point, float & longgest_distance);
 
 void pedalpoint_point_to_line(const point_3d & point, const line_func_3d & _line_func_3d, point_3d & pedalpoint);
+void pedalpoint_point_to_plane(const point_3d & point, const plane_func_3d & plane_func, point_3d & pedalpoint);
 void centroid_from_points(std::vector<point_3d>& points, point_3d & centroid_point);
 void intersection_line_to_sphere(line_func_3d & line_func, point_3d & sphere_center, float & sphere_r, point_3d & res_p1, point_3d & res_p2);
 void point_along_with_vector_within_dis(point_3d & point, Eigen::Vector3f & line_dir, point_3d & result_p1, point_3d & result_p2, float distance);
 
+void max_min_point_3d_vec(std::vector<point_3d> & points, point_3d & min_p, point_3d & max_p);
+
 bool is_parallel_vector(const Eigen::Vector3f & v1, const Eigen::Vector3f & v2);
+
+void make_points_ordered_by_distance(std::vector<point_3d>& points, std::vector<point_3d>& ordered_points);
 
 #endif // CLOUD_GEOMETRY_H
