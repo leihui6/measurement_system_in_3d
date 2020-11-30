@@ -25,7 +25,6 @@ private slots:
 
 private:
     std::map<std::string, std::string> m_str_str_map;
-    bool read_file_as_map(const std::string & file_name, std::map<std::string, std::string> & str_str_map);
 
 private:
     std::string m_configuration;

@@ -23,40 +23,6 @@ dialog_settings::~dialog_settings()
     delete ui;
 }
 
-bool dialog_settings::read_file_as_map(const std::string &file_name, std::map<std::string, std::string> &str_str_map)
-{
-    std::fstream ifile;
-
-    if (!open_file(file_name, &ifile))
-    {
-        show_warning("file warnning","No "+file_name);
-        return false;
-    }
-
-    std::string line;
-
-    while (std::getline(ifile, line))
-    {
-        if (line.empty()) continue;
-
-        if (line[0] == '#') continue;
-
-        size_t divided_flag = line.find(":");
-
-        if (divided_flag == std::string::npos) continue;
-
-        std::string
-                key_ = line.substr(0, divided_flag++);
-
-        std::string
-                value_ = line.substr(divided_flag, line.size() - divided_flag);
-
-        str_str_map[key_] = value_;
-    }
-    std::cout << "read " << str_str_map.size() << " parameters from local file.\n";
-    return true;
-}
-
 void dialog_settings::on_btn_reload_clicked()
 {
     m_configuration = ui->lineEdit_configuration->text().toStdString();

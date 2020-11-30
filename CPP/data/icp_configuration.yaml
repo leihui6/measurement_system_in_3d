@@ -1,0 +1,44 @@
+readingDataPointsFilters:
+    - IdentityDataPointsFilter
+
+referenceDataPointsFilters:
+    - IdentityDataPointsFilter
+
+matcher:
+  KDTreeMatcher:
+    knn: 1
+
+outlierFilters:
+   - NullOutlierFilter
+
+errorMinimizer:
+  # PointToPlaneErrorMinimizer
+  PointToPointErrorMinimizer
+
+
+transformationCheckers:
+  - CounterTransformationChecker:
+      maxIterationCount: 1000
+  - DifferentialTransformationChecker:
+      minDiffRotErr: 0.0001
+      minDiffTransErr: 0.0001
+      smoothLength: 4 
+
+inspector:
+#  PerformanceInspector:
+#    baseFileName: ./icp_output/
+#    dumpPerfOnExit: 1
+#    dumpStats: 1
+# NullInspector
+  VTKFileInspector:
+    baseFileName: ./output/
+    #dumpIterationInfo: 1
+    #writeBinary: 1
+    dumpReading: 1
+    # dumpDataLinks: 1
+    # dumpReference: 1
+
+logger:
+#  FileLogger:
+#    infoFileName: ./output/icp_log_file.log
+  NullLogger

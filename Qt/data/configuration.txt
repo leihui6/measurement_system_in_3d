@@ -1,16 +1,23 @@
-reading_data:data/test_reading_point_cloud.txt
+# for registration
+reading_data:data/01.txt
 
-reference_data:data/test_reference_point_cloud.txt
+# for labelling
+reference_data:data/temp.txt
 
+# all information will be exported to this folder
 output_folder:output
 
+# saving information of marked points
 label_filename:labeled_points.txt
 
+# configuration of ICP and result matrix
 icp_configuration:data/icp_configuration.yaml
 fine_registration_filename:fine_matrix.txt
 
+# configuration of 4PCS
 4pcs_configuration:data/4pcs_configuration.txt
 coarse_registration_filename:coarse_matrix.txt
 
+# Measurement result will be exported to this file
 measurement_filename:measurement_pairs.txt
 

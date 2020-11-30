@@ -35,11 +35,13 @@ private:
     QTimer timer;
     QViewerWidget * m_viewer_widget;
     void paintEvent(QPaintEvent *);
-    std::map<std::string, std::string> m_str_str_map;
+
 
     std::vector<point_3d> m_target_cloud_point;
 
     size_t write_log(const std::string log);
+
+    bool initialize_parameters();
 
 private slots:
 
@@ -92,10 +94,12 @@ private slots:
     void on_pushButton_fitting_color_clicked();
 
 private:
+    std::map<std::string, std::string> m_str_str_map;
     void initialize_widget();
 	void initialize_folder();
     QString m_export_labeled_info_path;
 	QString m_export_folder;
+    std::string m_configuration_file;
 };
 
 #endif // MAINWINDOW_H

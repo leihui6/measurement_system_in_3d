@@ -35,6 +35,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 	initialize_widget();
 
+    initialize_parameters();
+
 	this->setWindowTitle("3D industrial workpiece measurement system");
 }
 
@@ -56,7 +58,23 @@ size_t MainWindow::write_log(const std::string log)
 	ui->textEdit->insertPlainText(QString::fromStdString(before_log + log + postfix));
 	ui->textEdit->moveCursor(QTextCursor::End);
 
-	return size_t(ui->textEdit->toPlainText().size());
+    return size_t(ui->textEdit->toPlainText().size());
+}
+
+bool MainWindow::initialize_parameters()
+{
+    m_configuration_file = "data/configuration.txt";
+
+    m_str_str_map["configuration"] = m_configuration_file;
+
+    if (!read_file_as_map(m_configuration_file, m_str_str_map))
+        return false;
+
+    std::string output_log =
+            "read " + std::to_string(m_str_str_map.size()) +" parameters from " + m_configuration_file;
+    write_log(output_log);
+
+    return true;
 }
 
 void MainWindow::update()

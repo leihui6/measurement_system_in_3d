@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1168</width>
+    <width>1232</width>
     <height>688</height>
    </rect>
   </property>
@@ -190,7 +190,7 @@
           <enum>QTabWidget::Rounded</enum>
          </property>
          <property name="currentIndex">
-          <number>0</number>
+          <number>1</number>
          </property>
          <property name="movable">
           <bool>true</bool>
@@ -331,7 +331,7 @@
              <item>
               <widget class="QPushButton" name="btn_visualization">
                <property name="text">
-                <string>Visualization of Registration</string>
+                <string>Registration Visualization </string>
                </property>
               </widget>
              </item>
@@ -380,7 +380,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1168</width>
+     <width>1232</width>
      <height>23</height>
     </rect>
    </property>
