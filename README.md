@@ -52,6 +52,7 @@ Here are four steps:
 3. Searching marked points
 
    ![](./demo/searching_1.png) ![](./demo/searching_2.png)
+
    ![](./demo/searching_3.png) ![](./demo/searching_4.png)
    Searching marked points in scanned point cloud with registration result.
 
@@ -67,7 +68,7 @@ Here are four steps:
 
     '1' indicates the geometric relationship, '2' means the scatter relationship, and '3' means the angle should be calculated between two items based on the normal vector.
 
-    Through Plane-to-Plane and Point-to-Plane, the measurement reuslt is shown as below:
+    Through Plane-to-Plane and Point-to-Plane, the measurement reuslt(mm) is shown as below:
 
     |                	| Geometric 	| Scatter 	| Angle 	|
     |:--------------:	|:---------:	|:-------:	|:-----:	|
