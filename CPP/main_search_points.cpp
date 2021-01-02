@@ -41,15 +41,15 @@ int main(int argc, char *argv[])
 
 		<< "output folder of this program:\n\t" << output_folder << "\n";
 
-	std::vector<Eigen::Matrix4f> matrix_vev;
-	read_matrix(output_folder + "/coarse_matrix.txt", matrix_vev);
-	read_matrix(output_folder + "/fine_matrix.txt", matrix_vev);
+	//std::vector<Eigen::Matrix4f> matrix_vev;
+	//read_matrix(output_folder + "/coarse_matrix.txt", matrix_vev);
+	//read_matrix(output_folder + "/fine_matrix.txt", matrix_vev);
 	//std::cout << matrix_vev.back() << std::endl << matrix_vev.front() << std::endl;
 
-	Eigen::Matrix4f final_matrix;
-	final_matrix = matrix_vev.back() * matrix_vev.front();
+	//Eigen::Matrix4f final_matrix;
+	//final_matrix = matrix_vev.back() * matrix_vev.front();
 
-	transform_points(reading_point_cloud, final_matrix, reading_point_cloud);
+	//transform_points(reading_point_cloud, final_matrix, reading_point_cloud);
 
 	//save_points(reading_point_cloud, output_folder + "/test.txt");
 
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 
 	std::cout << "marked points search from reading point cloud was exported to " << output_folder + "/marked_points_searched.txt" << std::endl;
 
-	//system("pause");
+	system("pause");
 	return 0;
 }
 

@@ -406,11 +406,11 @@ void cloud_measurement::distance_scattered_points(
 {
 	std::vector<point_3d> points_plane_1;
 	points_plane(plane_func_1, points_1, points_plane_1);
-	//save_points(points_plane_1, "output/plane_" + std::to_string(++t_c) + ".txt");
+	save_points(points_plane_1, "output/plane_" + std::to_string(++t_c) + ".txt");
 
 	std::vector<point_3d> points_plane_2;
 	points_plane(plane_func_2, points_2, points_plane_2);
-	//save_points(points_plane_1, "output/plane_" + std::to_string(++t_c) + ".txt");
+	save_points(points_plane_2, "output/plane_" + std::to_string(++t_c) + ".txt");
 
 	distance_scattered_points(points_plane_1, points_plane_2, distance);
 }

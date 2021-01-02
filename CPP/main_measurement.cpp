@@ -2,7 +2,7 @@
 
 */
 
-//#define MEASUREMENT
+#define MEASUREMENT
 #ifdef MEASUREMENT
 
 #include "common_use.h"

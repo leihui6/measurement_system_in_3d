@@ -2,7 +2,7 @@
 reading_data:data/01.txt
 
 # for labelling
-reference_data:data/temp.txt
+reference_data:data/xiaoluowen.txt
 
 # all information will be exported to this folder
 output_folder:output

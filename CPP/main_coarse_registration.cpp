@@ -5,7 +5,7 @@
 *	Date: 06/06/2020
 */
 
-#define coarse_REGISTRATION
+//#define coarse_REGISTRATION
 #ifdef coarse_REGISTRATION
 
 #include "cloud_io.h"
