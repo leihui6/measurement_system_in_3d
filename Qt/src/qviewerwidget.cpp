@@ -140,6 +140,13 @@ void QViewerWidget::fit_picked_point_to_plane()
     m_cloud_viewer->fit_picked_point_to_plane();
 }
 
+void QViewerWidget::fit_picked_point_cylinder()
+{
+    m_cloud_viewer->set_current_detection_type(DT_CYLINDER);
+    m_cloud_viewer->remove_point_cloud(FITTING_CLOUD);
+    m_cloud_viewer->fit_picked_point_cylinder();
+}
+
 void QViewerWidget::get_labeled_points_map(std::map<std::string,std::vector<point_3d>> & labeled_points_map)
 {
     labeled_points_map = m_cloud_viewer->get_labeled_points_map();

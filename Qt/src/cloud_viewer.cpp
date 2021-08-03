@@ -84,14 +84,14 @@ void cloud_viewer::set_color(const std::string & point_cloud_name, osg::Vec4 & c
 {
 	if (m_node_map.find(point_cloud_name) == m_node_map.end()) return;
 
-	osg::ref_ptr<osg::Node> node = m_node_map[point_cloud_name];
-	osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array();
-	//color.set( color.r()/255.0f,color.g()/255.0f,color.b()/255.0f,color.w());
-	colors->push_back(color);
+    osg::ref_ptr<osg::Node> node = m_node_map[point_cloud_name];
+    osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array();
+    //color.set( color.r()/255.0f,color.g()/255.0f,color.b()/255.0f,color.w());
 
-	// color
-	node->asGeode()->getChild(0)->asGeometry()->setColorArray(colors.get());
-	node->asGeode()->getChild(0)->asGeometry()->setColorBinding(osg::Geometry::BIND_OVERALL);
+    colors->push_back(color);
+
+    node->asGeode()->getChild(0)->asGeometry()->setColorArray(colors.get());
+    node->asGeode()->getChild(0)->asGeometry()->setColorBinding(osg::Geometry::BIND_OVERALL);
 }
 
 void cloud_viewer::set_background_color(float r, float g, float b, float w)
@@ -244,6 +244,23 @@ void cloud_viewer::fit_picked_point_to_plane()
     set_color(FITTING_CLOUD, m_fitting_color);
 }
 
+void cloud_viewer::fit_picked_point_cylinder()
+{
+    if(m_picked_points.size() < 6) return;
+
+    cylinder_func cf;
+    m_cf.fitting_cylinder_linear_least_squares(m_picked_points,cf);
+
+    Eigen::Vector3f z_axis(0, 0, 1);
+
+    Eigen::Vector3f  rotated_axis = z_axis.cross(cf.axis.direction);
+
+    float rotated_angle = 0.0;
+    angle_between_two_vector_3d(z_axis, cf.axis.direction, rotated_angle);
+
+    add_cylinder(cf,rotated_axis,rotated_angle, FITTING_CLOUD);
+}
+
 void cloud_viewer::add_line_segment(const point_3d &beg_p, const point_3d &end_p, const std::string & line_name, float line_width)
 {
     osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
@@ -279,6 +296,46 @@ void cloud_viewer::add_plane_square(std::vector<point_3d> &plane_square, const s
     update(plane_name,node);
 }
 
+void cloud_viewer::add_cylinder(cylinder_func &cf, Eigen::Vector3f & rotated_axis, float rotated_angle, const std::string cylinder_name)
+{
+    // building a cylind with a standard position
+    point_3d
+            center_p = cf.axis.get_origin_point_3d(),
+            direction = cf.axis.get_direction_point_3d();
+
+        osg::ref_ptr<osg::ShapeDrawable> sd = new osg::ShapeDrawable(
+                new osg::Cylinder
+                (
+                    osg::Vec3(0, 0, 0),
+                    cf.radius,
+                    cf.height
+                ));
+    osg::ref_ptr<osg::Vec3Array> normals = new osg::Vec3Array;
+    normals->push_back(osg::Vec3(direction.x, direction.y, direction.z));
+    sd->setColor(m_fitting_color);
+    sd->setColorBinding(osg::Geometry::BIND_OVERALL);
+    sd->setNormalArray(normals);
+    sd->setNormalBinding(osg::Geometry::BIND_OVERALL);
+
+    // building a matrix for cylinder
+    osg::Matrix mRotate(osg::Matrix::identity()), mTrans(osg::Matrix::identity());
+    mTrans.makeTranslate(osg::Vec3f(center_p.x, center_p.y, center_p.z));
+    mRotate.makeRotate(
+                double(osg::inDegrees(rotated_angle)),
+                double(rotated_axis[0]),
+                double(rotated_axis[1]),
+                double(rotated_axis[2]));
+    osg::ref_ptr<osg::MatrixTransform> mt = new osg::MatrixTransform(osg::Matrix::identity());
+    mt->setMatrix(mRotate*mTrans);
+    mt->addChild(sd);
+
+    // add
+    osg::ref_ptr<osg::Geode> node = new osg::Geode;
+    node->addChild(mt);
+
+    update(cylinder_name,node);
+}
+
 void cloud_viewer::set_current_detection_type(DETECT_TYPE dt)
 {
     m_detection_type = dt;
@@ -291,8 +348,9 @@ void cloud_viewer::record_labeled_points()
 	if (m_detection_type == DT_POINT)
 	{
 		std::string labeled_name = "point" + std::to_string(m_point_points.size());
-		m_point_points.push_back(m_picked_points);
-		m_labeled_points_map[labeled_name] = m_picked_points;
+        m_labeled_points_map[labeled_name] = m_picked_points;
+
+        m_point_points.push_back(m_picked_points);
 	}
 	else if(m_detection_type == DT_LINE)
     {
@@ -302,8 +360,9 @@ void cloud_viewer::record_labeled_points()
             return;
         }
         std::string labeled_name = "line"+std::to_string(m_line_points.size());
-        m_line_points.push_back(m_picked_points);
         m_labeled_points_map[labeled_name] = m_picked_points;
+
+        m_line_points.push_back(m_picked_points);
     }
 	else if (m_detection_type == DT_PLANE)
 	{
@@ -312,10 +371,23 @@ void cloud_viewer::record_labeled_points()
             show_warning("Detection Plane","Picked points are not enough, please pick more points");
             return;
         }
-        std::string labeled_name = "plane"+std::to_string(m_line_points.size());
-        m_line_points.push_back(m_picked_points);
+        std::string labeled_name = "plane"+std::to_string(m_plane_points.size());
         m_labeled_points_map[labeled_name] = m_picked_points;
+
+        m_plane_points.push_back(m_picked_points);
 	}
+    else if (m_detection_type == DT_CYLINDER)
+    {
+        if(m_picked_points.size() < 6)
+        {
+            show_warning("Detection Cylinder","Picked points are not enough, please pick more points");
+            return;
+        }
+        std::string labeled_name = "cylinder"+std::to_string(m_cylinder_points.size());
+        m_labeled_points_map[labeled_name] = m_picked_points;
+
+        m_cylinder_points.push_back(m_picked_points);
+    }
 	else
 	{
 

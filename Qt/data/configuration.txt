@@ -2,7 +2,7 @@
 reading_data:data/01.txt
 
 # for labelling
-reference_data:data/xiaoluowen.txt
+reference_data:data/pipeThread_standard.txt
 
 # all information will be exported to this folder
 output_folder:output

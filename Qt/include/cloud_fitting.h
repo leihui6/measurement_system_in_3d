@@ -21,7 +21,7 @@ public:
 	
 	float fitting_cylinder_linear_least_squares(std::vector<point_3d>& points, cylinder_func & _cylinder_func);
 
-// for cylinder
+// only for fitting_cylinder_linear_least_squares usage inside
 private:
 
 	void preprocess(std::vector<point_3d>& points, Eigen::Vector3f & average);

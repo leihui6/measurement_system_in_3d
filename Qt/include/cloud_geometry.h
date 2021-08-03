@@ -1,14 +1,19 @@
 ﻿#ifndef CLOUD_GEOMETRY_H
 #define CLOUD_GEOMETRY_H
 
+#define _USE_MATH_DEFINES
+
 #include <iostream>
 #include <string>
 #include <vector>
 #include <fstream>
 #include <sstream>
 #include <cfloat>
+#include <cmath>
 
+#include <osg/MatrixTransform>
 #include <osg/Geometry>
+#include <osg/ShapeDrawable>
 #include <osg/Geode>
 #include <osg/Point>
 
@@ -95,6 +100,8 @@ void points_to_osg_structure(std::vector<point_3d>& points, osg::ref_ptr<osg::Ve
 void points_to_geometry_node(std::vector<point_3d>& points, osg::ref_ptr<osg::Geometry> geometry, float w);
 
 void points_on_line(std::vector<point_3d>& points, std::vector<point_3d>& points_on_line, line_func_3d & line_func, float distance_threshold);
+
+void angle_between_two_vector_3d(Eigen::Vector3f &p1, Eigen::Vector3f &p2, float & angle);
 
 void distance_point_to_line(const point_3d& points, const line_func_3d & _line_func_3d, float & points_dis);
 void distance_point_to_point(const point_3d & point_1, const point_3d & point_2, float & distance);

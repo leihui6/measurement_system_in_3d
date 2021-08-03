@@ -475,3 +475,10 @@ void make_points_ordered_by_distance(std::vector<point_3d> &points, std::vector<
         }
     }
 }
+
+void angle_between_two_vector_3d(Eigen::Vector3f &p1, Eigen::Vector3f &p2, float &angle)
+{
+    float dot_value = p1.dot(p2), lenSq1 = p1.norm(), lenSq2 = p2.norm();
+
+    angle = acosf(dot_value / (lenSq1 * lenSq2))* 180.0 / M_PI;
+}

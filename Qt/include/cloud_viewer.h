@@ -85,7 +85,6 @@ private:
 	std::map<std::string, osg::ref_ptr<osg::Node>> m_node_map;
 
 	// normal point cloud properties
-
 public:
 	void set_point_cloud_size(float size);
 	float get_point_cloud_size();
@@ -122,21 +121,26 @@ public:
 	void fit_picked_point_to_point();
     void fit_picked_point_to_line();
     void fit_picked_point_to_plane();
+    void fit_picked_point_cylinder();
 
     void add_line_segment(const point_3d & beg_p, const point_3d & end_p, const std::string & line_name, float line_width);
     void add_plane_square(std::vector<point_3d> & plane_square, const std::string plane_name);
+    void add_cylinder(cylinder_func &cf, Eigen::Vector3f & rotated_axis, float rotated_angle, const std::string cylinder_name);
 
     void set_current_detection_type(DETECT_TYPE dt);
     void record_labeled_points();
 	DETECT_TYPE get_current_detection_type();
 
     void set_fitting_color(const osg::Vec4 & c);
+
 private:
     cloud_fitting m_cf;
     DETECT_TYPE m_detection_type;
 	// will be increased automatically and work in current env
 	std::vector<std::vector<point_3d>> m_point_points;
     std::vector<std::vector<point_3d>> m_line_points;
+    std::vector<std::vector<point_3d>> m_plane_points;
+    std::vector<std::vector<point_3d>> m_cylinder_points;
     //osg::Vec4 m_line_color;
     float m_line_width;
     osg::Vec4 m_fitting_color;

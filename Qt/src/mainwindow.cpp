@@ -32,12 +32,10 @@ MainWindow::MainWindow(QWidget *parent)
 	//connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::open);
 
 	initialize_folder();
-
 	initialize_widget();
-
     initialize_parameters();
 
-	this->setWindowTitle("3D industrial workpiece measurement system");
+    this->setWindowTitle("3D Industrial Workpiece Measurement System");
 }
 
 MainWindow::~MainWindow()
@@ -178,6 +176,8 @@ void MainWindow::on_btn_plane_labeling_clicked()
 void MainWindow::on_btn_cylinder_labeling_clicked()
 {
 	write_log("selected: cylinder");
+
+    m_viewer_widget->fit_picked_point_cylinder();
 }
 
 
